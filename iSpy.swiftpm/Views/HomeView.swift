@@ -1,10 +1,15 @@
 import SwiftUI
 
+@available(iOS 17.0, *)
 struct HomeView: View {
+    var gameState: GameState
+    @State private var showOnboarding = false
+    @State  var showGame = false  // NUEVO
+    
     var body: some View {
         VStack {
             HStack {
-                Text("1250")
+                Text("\(gameState.totalScore)")
                     .font(.system(size: 50, weight: .bold))
                     .foregroundStyle(.white)
                 
@@ -19,8 +24,13 @@ struct HomeView: View {
  
             GameWidget(
                 title: "Road Trip",
-                status: "Ready to start",
-                imageName: "roadTrip"
+                imageName: "roadTrip",
+                onStartChallenge: {
+                    if gameState.currentChallenge != nil {
+                        showGame = true
+                    } else {showOnboarding = true}
+                },
+                isContinuing: gameState.currentChallenge != nil
             )
             .padding(.horizontal, 20)
             
@@ -37,14 +47,20 @@ struct HomeView: View {
         )
         .navigationTitle("Hey, Explorer!")
         .toolbarColorScheme(.dark, for: .navigationBar)
+        .navigationDestination(isPresented: $showOnboarding) {
+            OnboardingView(gameState: gameState)
+        }
+        .navigationDestination(isPresented: $showGame) {GameView(gameState: gameState)}
+        .onAppear {
+            gameState.loadState()
+        }
     }
 }
 struct GameWidget: View {
     var title: String
-    var status: String
     var imageName: String
-    
-    @State private var isGameActive = false
+    var onStartChallenge: () -> Void
+    var isContinuing: Bool
     
     var body: some View {
         VStack(spacing: 20) {
@@ -74,7 +90,7 @@ struct GameWidget: View {
                         .foregroundStyle(.black)
                         .multilineTextAlignment(.leading)
                     
-                    Text("Find 10 objects in your route!")
+                    Text("Find 6 objects in your route!")
                         .font(.body)
                         .foregroundStyle(.gray)
                         .multilineTextAlignment(.leading)
@@ -85,16 +101,32 @@ struct GameWidget: View {
             }
             
             Button {
+                onStartChallenge()
             } label: {
-                Text("Start Challenge!")
-                    .font(.title3)
-                    .bold()
-                    .foregroundStyle(.white)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 55)
-                    .background(Color.blue)
-                    .clipShape(Capsule()) // Capsule es mejor que RoundedRectangle(100
-                    .shadow(radius: 5)
+                if isContinuing {
+                    Text("Continue game")
+                        .font(.title3)
+                        .bold()
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 55)
+                        .background(Color.green)
+                        .clipShape(Capsule())
+                        .shadow(radius: 5)
+                    
+                } else {
+                    Text("Start Challenge!")
+                        .font(.title3)
+                        .bold()
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 55)
+                        .background(Color.blue)
+                        .clipShape(Capsule())
+                        .shadow(radius: 5)
+                    
+                }
+                
             }
         }
         .padding(20)
@@ -106,5 +138,9 @@ struct GameWidget: View {
 }
 
 #Preview {
-    HomeView()
+    if #available(iOS 17.0, *) {
+        HomeView(gameState: GameState())
+    } else {
+        // Fallback on earlier versions
+    }
 }
