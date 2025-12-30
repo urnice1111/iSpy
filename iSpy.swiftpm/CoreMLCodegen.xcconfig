@@ -1,0 +1,6 @@
+// Core ML Code Generation Language Configuration
+// This file sets the code generation language for Core ML models to Swift.
+// Add this file to your Xcode project to ensure Core ML generates Swift code.
+
+// Key/Value Build Settings:
+CODEGEN_LANGUAGE = Swift

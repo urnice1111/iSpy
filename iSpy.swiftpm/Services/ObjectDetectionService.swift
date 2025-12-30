@@ -1,38 +1,217 @@
 import UIKit
+import CoreML
+import Vision
 
 class ObjectDetectionService {
-    // Placeholder for CoreML model integration
-    // This will be replaced with actual CoreML model later
     
-    func detectObjects(in image: UIImage) -> [String] {
-        // TODO: Replace with actual CoreML model inference
-        // For now, return empty array or mock results for testing
-        
-        // Mock implementation - can be used for testing game flow
-        // In production, this should:
-        // 1. Prepare the image for the model (resize, normalize, etc.)
-        // 2. Run inference with the CoreML model
-        // 3. Process the results (multilabel classification)
-        // 4. Return array of detected object names/tags
-        
-        return []
+    // The Vision CoreML model
+    private var visionModel: VNCoreMLModel?
+    
+    // Confidence threshold - adjust this value (0.0 to 1.0)
+    // Lower = more detections but more false positives
+    // Higher = fewer detections but more accurate
+    var confidenceThreshold: Float = 0.5
+    
+    init() {
+        setupModel()
     }
     
-    func checkIfObjectFound(_ objectName: String, in detectedObjects: [String]) -> Bool {
-        // Case-insensitive matching
-        let lowerObjectName = objectName.lowercased()
-        return detectedObjects.contains { detectedObject in
-            detectedObject.lowercased() == lowerObjectName ||
-            detectedObject.lowercased().contains(lowerObjectName) ||
-            lowerObjectName.contains(detectedObject.lowercased())
+    /// Setup the CoreML model
+    private func setupModel() {
+        let config = MLModelConfiguration()
+        config.computeUnits = .cpuAndGPU
+
+        do {
+            // For Swift Playgrounds: Try multiple approaches to find the model
+            var modelURL: URL?
+            
+            // Approach 1: Look for pre-compiled model (.mlmodelc)
+            if let url = Bundle.main.url(forResource: "MultiLabelModelISpy", withExtension: "mlmodelc") {
+                modelURL = url
+                print("📦 Found compiled model (.mlmodelc)")
+            }
+            // Approach 2: Look for source model (.mlmodel) in bundle
+            else if let url = Bundle.main.url(forResource: "MultiLabelModelISpy", withExtension: "mlmodel") {
+                // Compile the model at runtime
+                let compiledURL = try MLModel.compileModel(at: url)
+                modelURL = compiledURL
+                print("📦 Found and compiled source model (.mlmodel)")
+            }
+            // Approach 3: Try to find in app's resource path (Swift Playgrounds specific)
+            else {
+                // Get the bundle path and look for the model
+                let bundlePath = Bundle.main.bundlePath
+                let possiblePaths = [
+                    "\(bundlePath)/MultiLabelModelISpy.mlmodelc",
+                    "\(bundlePath)/MultiLabelModelISpy.mlmodel",
+                    "\(bundlePath)/Resources/MultiLabelModelISpy.mlmodelc",
+                    "\(bundlePath)/Resources/MultiLabelModelISpy.mlmodel"
+                ]
+                
+                for path in possiblePaths {
+                    if FileManager.default.fileExists(atPath: path) {
+                        let url = URL(fileURLWithPath: path)
+                        if path.hasSuffix(".mlmodel") {
+                            modelURL = try MLModel.compileModel(at: url)
+                            print("📦 Found model at: \(path) (compiled)")
+                        } else {
+                            modelURL = url
+                            print("📦 Found model at: \(path)")
+                        }
+                        break
+                    }
+                }
+            }
+            
+            guard let finalURL = modelURL else {
+                print("❌ Could not find MultiLabelModelISpy model in bundle")
+                print("📂 Bundle path: \(Bundle.main.bundlePath)")
+                // List contents for debugging
+                if let contents = try? FileManager.default.contentsOfDirectory(atPath: Bundle.main.bundlePath) {
+                    print("📂 Bundle contents: \(contents.filter { $0.contains("mlmodel") || $0.contains("Model") })")
+                }
+                visionModel = nil
+                return
+            }
+            
+            let model = try MLModel(contentsOf: finalURL, configuration: config)
+            visionModel = try VNCoreMLModel(for: model)
+            print("✅ CoreML model loaded successfully!")
+            
+        } catch {
+            print("❌ Failed to load CoreML model: \(error)")
+            visionModel = nil
         }
     }
     
-    // Helper method for when CoreML model is integrated
-    // This structure allows easy replacement later
-    func processImageForModel(_ image: UIImage) -> [String] {
-        // Placeholder - will call detectObjects after model is integrated
-        return detectObjects(in: image)
+    /// Detect objects in an image using the CoreML model
+    /// - Parameter image: The UIImage to analyze
+    /// - Returns: Array of detected object labels
+    func detectObjects(in image: UIImage) -> [String] {
+        // If no model is loaded, return empty (or mock data for testing)
+        guard let model = visionModel else {
+            print("⚠️ No model loaded - returning empty results")
+            // Uncomment below to return mock data for testing UI:
+            // return mockDetection()
+            return []
+        }
+        
+        guard let cgImage = image.cgImage else {
+            print("❌ Could not get CGImage from UIImage")
+            return []
+        }
+        
+        var detectedObjects: [String] = []
+        
+        // Create the Vision request
+        let request = VNCoreMLRequest(model: model) { [weak self] request, error in
+            guard let self = self else { return }
+            
+            if let error = error {
+                print("❌ Vision request error: \(error)")
+                return
+            }
+            
+            // Process results
+            if let results = request.results as? [VNClassificationObservation] {
+                // Filter by confidence threshold
+                let validResults = results.filter { $0.confidence >= self.confidenceThreshold }
+                
+                // Get the labels
+                detectedObjects = validResults.map { $0.identifier }
+                
+                // Debug logging
+                print("🔍 Detected \(validResults.count) objects above threshold \(self.confidenceThreshold):")
+                for result in validResults {
+                    print("   - \(result.identifier): \(String(format: "%.2f", result.confidence * 100))%")
+                }
+            }
+        }
+        
+        // Configure the request
+        request.imageCropAndScaleOption = .centerCrop
+        
+        // Create handler and perform request
+        let handler = VNImageRequestHandler(cgImage: cgImage, options: [:])
+        
+        do {
+            try handler.perform([request])
+        } catch {
+            print("❌ Failed to perform Vision request: \(error)")
+        }
+        
+        return detectedObjects
+    }
+    
+    /// Check if a specific object was found in the detection results
+    /// Uses flexible matching (case-insensitive, partial matches)
+    func checkIfObjectFound(_ objectName: String, in detectedObjects: [String]) -> Bool {
+        let lowerObjectName = objectName.lowercased()
+        
+        return detectedObjects.contains { detectedObject in
+            let lowerDetected = detectedObject.lowercased()
+            
+            // Exact match
+            if lowerDetected == lowerObjectName {
+                return true
+            }
+            
+            // Partial match (detected contains object name or vice versa)
+            if lowerDetected.contains(lowerObjectName) || lowerObjectName.contains(lowerDetected) {
+                return true
+            }
+            
+            // Word-by-word match (for multi-word labels)
+            let objectWords = lowerObjectName.split(separator: " ")
+            let detectedWords = lowerDetected.split(separator: " ")
+            
+            for objectWord in objectWords {
+                for detectedWord in detectedWords {
+                    if objectWord == detectedWord {
+                        return true
+                    }
+                }
+            }
+            
+            return false
+        }
+    }
+    
+    /// Get all detections with their confidence scores
+    func detectObjectsWithConfidence(in image: UIImage) -> [(label: String, confidence: Float)] {
+        guard let model = visionModel,
+              let cgImage = image.cgImage else {
+            return []
+        }
+        
+        var results: [(label: String, confidence: Float)] = []
+        
+        let request = VNCoreMLRequest(model: model) { [weak self] request, error in
+            guard let self = self else { return }
+            
+            if let observations = request.results as? [VNClassificationObservation] {
+                results = observations
+                    .filter { $0.confidence >= self.confidenceThreshold }
+                    .map { ($0.identifier, $0.confidence) }
+            }
+        }
+        
+        request.imageCropAndScaleOption = .centerCrop
+        
+        let handler = VNImageRequestHandler(cgImage: cgImage, options: [:])
+        try? handler.perform([request])
+        
+        return results
+    }
+    
+    // MARK: - Mock Data for Testing
+    
+    /// Returns mock detection results for testing the UI without a model
+    private func mockDetection() -> [String] {
+        // Randomly return some objects for testing
+        let possibleObjects = ["Car", "Tree", "Road", "Sky", "Building", "Traffic Sign"]
+        let count = Int.random(in: 0...3)
+        return Array(possibleObjects.shuffled().prefix(count))
     }
 }
 

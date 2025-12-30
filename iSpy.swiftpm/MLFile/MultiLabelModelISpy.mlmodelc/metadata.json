@@ -1,0 +1,87 @@
+[
+  {
+    "metadataOutputVersion" : "3.0",
+    "shortDescription" : "Model for multi label classification for SSC App iSpy",
+    "outputSchema" : [
+      {
+        "isOptional" : "0",
+        "keyType" : "String",
+        "formattedType" : "Dictionary (String → Double)",
+        "type" : "Dictionary",
+        "name" : "targetProbability",
+        "shortDescription" : ""
+      }
+    ],
+    "storagePrecision" : "Float32",
+    "modelParameters" : [
+
+    ],
+    "author" : "UwU",
+    "specificationVersion" : 8,
+    "computePrecision" : "Float16",
+    "isUpdatable" : "0",
+    "stateSchema" : [
+
+    ],
+    "availability" : {
+      "macOS" : "14.0",
+      "tvOS" : "17.0",
+      "visionOS" : "1.0",
+      "watchOS" : "unavailable",
+      "iOS" : "17.0",
+      "macCatalyst" : "17.0"
+    },
+    "modelType" : {
+      "name" : "MLModelType_pipeline",
+      "structure" : [
+        {
+          "name" : "MLModelType_visionFeaturePrint"
+        },
+        {
+          "name" : "MLModelType_neuralNetworkClassifier"
+        },
+        {
+          "name" : "MLModelType_classConfidenceThresholding"
+        }
+      ]
+    },
+    "inputSchema" : [
+      {
+        "height" : "360",
+        "colorspace" : "BGR",
+        "isOptional" : "0",
+        "width" : "360",
+        "isColor" : "1",
+        "formattedType" : "Image (Color 360 × 360)",
+        "hasSizeFlexibility" : "0",
+        "type" : "Image",
+        "shortDescription" : "",
+        "name" : "image"
+      }
+    ],
+    "classLabels" : [
+      "Car",
+      "Road",
+      "Speed Sign",
+      "Traffic Light",
+      "Traffic Sign"
+    ],
+    "generatedClassName" : "MultiLabelModelISpy",
+    "userDefinedMetadata" : {
+      "com.apple.coreml.model.preview.type" : "multiLabelImageClassifier",
+      "com.apple.createml.training.started" : "2025-12-29T03:29:41Z",
+      "com.apple.createml.version" : "26.1.0",
+      "com.apple.createml.training.finished" : "2025-12-29T03:29:43Z",
+      "com.apple.createml.app.tag" : "175.6",
+      "com.apple.createml.model.mlic.confidenceThresholds" : "{\"Car\":0.25682193,\"Speed Sign\":0.6881251,\"Traffic Light\":0.2582792,\"Road\":0.29996398,\"Traffic Sign\":0.41731068}",
+      "com.apple.createml.model.created" : "2025-12-29T03:29:43Z",
+      "com.apple.createml.app.version" : "6.2"
+    },
+    "neuralNetworkLayerTypeHistogram" : {
+      "Squeeze" : 1,
+      "InnerProduct" : 1,
+      "ActivationSigmoid" : 1
+    },
+    "method" : "predict"
+  }
+]

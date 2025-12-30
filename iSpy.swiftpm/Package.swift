@@ -37,7 +37,12 @@ let package = Package(
     targets: [
         .executableTarget(
             name: "AppModule",
-            path: "."
+            path: ".",
+            resources: [
+                /// So this line changes everything lol, no Resources folder in the project, what a headache lol.
+                // .process("Resources"),  
+                .copy("MLFile/MultiLabelModelISpy.mlmodelc")
+            ]
         )
     ],
     swiftLanguageVersions: [.v6]

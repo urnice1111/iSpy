@@ -1,0 +1,64 @@
+{
+  "storage" : "model.espresso.weights",
+  "analyses" : {
+
+  },
+  "properties" : {
+
+  },
+  "format_version" : 200,
+  "metadata_in_weights" : [
+
+  ],
+  "layers" : [
+    {
+      "nB" : 768,
+      "top" : "LastDenseOutput",
+      "has_biases" : 1,
+      "weights" : {
+
+      },
+      "nC" : 5,
+      "blob_weights" : 3,
+      "type" : "inner_product",
+      "has_relu" : 0,
+      "bottom" : "features",
+      "blob_biases" : 1,
+      "has_tanh" : 0,
+      "debug_info" : "LastDenseLayer",
+      "name" : "LastDenseLayer",
+      "has_prelu" : 0
+    },
+    {
+      "bottom" : "LastDenseOutput",
+      "weights" : {
+
+      },
+      "mode" : 3,
+      "debug_info" : "SigmoidLayer",
+      "top" : "targetProbability",
+      "type" : "activation",
+      "name" : "SigmoidLayer",
+      "attributes" : {
+        "is_output" : 1
+      }
+    },
+    {
+      "bottom" : "targetProbability",
+      "size_of_axes" : 0,
+      "squeeze_all" : true,
+      "weights" : {
+
+      },
+      "nd_axis" : 0,
+      "debug_info" : "SqueezeLayer",
+      "version" : 1,
+      "top" : "SqueezedtargetProbability",
+      "type" : "squeeze",
+      "name" : "SqueezeLayer",
+      "attributes" : {
+        "is_output" : 1
+      }
+    }
+  ]
+}

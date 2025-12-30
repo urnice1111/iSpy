@@ -33,16 +33,15 @@ struct GameObject: Identifiable, Codable, Hashable {
 struct ObjectDatabase {
     static let allObjects: [GameObject] = [
         // Easy objects
-        GameObject(name: "Traffic Sign", category: "Road", difficulty: .easy),
+        GameObject(name: "Speed Sign", category: "Road", difficulty: .easy),
         GameObject(name: "Car", category: "Vehicle", difficulty: .easy),
-        GameObject(name: "Tree", category: "Nature", difficulty: .easy),
-        GameObject(name: "Building", category: "Urban", difficulty: .easy),
-        GameObject(name: "Cloud", category: "Sky", difficulty: .easy),
-        GameObject(name: "Street Light", category: "Road", difficulty: .easy),
-        GameObject(name: "Road", category: "Road", difficulty: .easy),
-        GameObject(name: "Sky", category: "Sky", difficulty: .easy),
-        GameObject(name: "Grass", category: "Nature", difficulty: .easy),
-        GameObject(name: "Bridge", category: "Infrastructure", difficulty: .easy),
+        GameObject(name: "Speed Sign", category: "Nature", difficulty: .easy),
+//        GameObject(name: "Building", category: "Urban", difficulty: .easy),
+//        GameObject(name: "Cloud", category: "Sky", difficulty: .easy),
+//        GameObject(name: "Street Light", category: "Road", difficulty: .easy),
+//        GameObject(name: "Road", category: "Road", difficulty: .easy),
+//        GameObject(name: "Grass", category: "Nature", difficulty: .easy),
+//        GameObject(name: "Bridge", category: "Infrastructure", difficulty: .easy),
         
         // Medium objects
         GameObject(name: "Mountain", category: "Nature", difficulty: .medium),
@@ -74,7 +73,7 @@ struct ObjectDatabase {
         let mediumObjects = allObjects.filter { $0.difficulty == .medium }.shuffled().prefix(medium)
         let hardObjects = allObjects.filter { $0.difficulty == .hard }.shuffled().prefix(hard)
         
-        return Array(easyObjects) + Array(mediumObjects) + Array(hardObjects)
+        return Array(easyObjects)  /*Array(mediumObjects) + Array(hardObjects)*/
     }
 }
 
