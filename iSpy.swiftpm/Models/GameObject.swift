@@ -35,7 +35,7 @@ struct ObjectDatabase {
         // Easy objects
         GameObject(name: "Speed Sign", category: "Road", difficulty: .easy),
         GameObject(name: "Car", category: "Vehicle", difficulty: .easy),
-        GameObject(name: "Speed Sign", category: "Nature", difficulty: .easy),
+        GameObject(name: "Traffic Sign", category: "Nature", difficulty: .easy),
 //        GameObject(name: "Building", category: "Urban", difficulty: .easy),
 //        GameObject(name: "Cloud", category: "Sky", difficulty: .easy),
 //        GameObject(name: "Street Light", category: "Road", difficulty: .easy),

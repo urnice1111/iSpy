@@ -10,6 +10,7 @@ struct GameView: View {
     @State private var timer: Timer?
     @State private var showingCompletionAlert = false
     @State private var showingProcessingAlert = false
+    @State private var showingEndGameAlert = false
     @State private var processingMessage = ""
     @Environment(\.dismiss) var dismiss
     
@@ -47,8 +48,7 @@ struct GameView: View {
                     }
                     
                     Button {
-                        gameState.finishChallenge()
-                        dismiss()
+                        $showingEndGameAlert.wrappedValue.toggle()
                     } label : {
                         Text("End")
                             .foregroundStyle(Color.red)
@@ -59,11 +59,26 @@ struct GameView: View {
                     Button {
                         dismiss()
                     } label: {
-                        Image(systemName: "xmark.circle.fill")
+                        Image(systemName: "xmark")
+                            
                             .font(.system(size: 30))
                             .foregroundStyle(.white)
-                            .background(Color.black.opacity(0.3))
+//                            .background(Color.black.opacity(0.3))
                             .clipShape(Circle())
+                            .font(.system(size: 20, weight: .bold)) // Slightly smaller font feels more "premium"
+                                    .foregroundStyle(.white.opacity(0.8))
+                                    .padding(12) // Give the icon some breathing room
+                                    .background {
+                                        Circle()
+                                            .fill(.ultraThinMaterial) // The core glass effect
+//                                            .environment(\.colorScheme, .dark) // Forces a dark glass look
+                                    }
+                                    .overlay {
+                                        // This creates the "edge" of the glass
+                                        Circle()
+                                            .stroke(.white.opacity(0.2), lineWidth: 0.5)
+                                    }
+                                    .shadow(color: .black.opacity(0.1), radius: 10, x: 0, y: 5)
                     }
                 }
                 .padding()
@@ -141,13 +156,13 @@ struct GameView: View {
                     }
                 }
                 .padding()
-                .background(
-                    LinearGradient(
-                        colors: [Color.clear, Color.black.opacity(0.6)],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                )
+//                .background(
+//                    LinearGradient(
+//                        colors: [Color.clear, Color.black.opacity(0.6)],
+//                        startPoint: .top,
+//                        endPoint: .bottom
+//                    )
+//                )
             }
         }
         .onAppear {
@@ -158,11 +173,27 @@ struct GameView: View {
             stopTimer()
         }
         .navigationBarBackButtonHidden(true)
-        .alert("Processing Photo", isPresented: $showingProcessingAlert) {
+        .toolbar(.hidden, for: .tabBar)
+        
+        .alert("Processing Photo",
+               isPresented: $showingProcessingAlert
+        ){
             Button("OK", role: .cancel) { }
         } message: {
             Text(processingMessage)
         }
+        
+        .alert("End game?", isPresented: $showingEndGameAlert){
+            Button("End", role: .destructive){
+                gameState.finishChallenge()
+                dismiss()
+            }
+            
+            Button("Cancel", role: .cancel){}
+        } message: {
+            Text("The game will be ended and you will be redirected to the main menu.")
+        }
+        
         .alert("Challenge Complete!", isPresented: $showingCompletionAlert) {
             Button("OK") {
                 gameState.finishChallenge()

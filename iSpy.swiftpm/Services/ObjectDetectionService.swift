@@ -12,72 +12,25 @@ class ObjectDetectionService {
     // Higher = fewer detections but more accurate
     var confidenceThreshold: Float = 0.5
     
+    @available(iOS 17.0, *)
     init() {
         setupModel()
     }
     
     /// Setup the CoreML model
+    @available(iOS 17.0, *)
     private func setupModel() {
         let config = MLModelConfiguration()
         config.computeUnits = .cpuAndGPU
 
         do {
-            // For Swift Playgrounds: Try multiple approaches to find the model
-            var modelURL: URL?
-            
-            // Approach 1: Look for pre-compiled model (.mlmodelc)
-            if let url = Bundle.main.url(forResource: "MultiLabelModelISpy", withExtension: "mlmodelc") {
-                modelURL = url
-                print("📦 Found compiled model (.mlmodelc)")
-            }
-            // Approach 2: Look for source model (.mlmodel) in bundle
-            else if let url = Bundle.main.url(forResource: "MultiLabelModelISpy", withExtension: "mlmodel") {
-                // Compile the model at runtime
-                let compiledURL = try MLModel.compileModel(at: url)
-                modelURL = compiledURL
-                print("📦 Found and compiled source model (.mlmodel)")
-            }
-            // Approach 3: Try to find in app's resource path (Swift Playgrounds specific)
-            else {
-                // Get the bundle path and look for the model
-                let bundlePath = Bundle.main.bundlePath
-                let possiblePaths = [
-                    "\(bundlePath)/MultiLabelModelISpy.mlmodelc",
-                    "\(bundlePath)/MultiLabelModelISpy.mlmodel",
-                    "\(bundlePath)/Resources/MultiLabelModelISpy.mlmodelc",
-                    "\(bundlePath)/Resources/MultiLabelModelISpy.mlmodel"
-                ]
-                
-                for path in possiblePaths {
-                    if FileManager.default.fileExists(atPath: path) {
-                        let url = URL(fileURLWithPath: path)
-                        if path.hasSuffix(".mlmodel") {
-                            modelURL = try MLModel.compileModel(at: url)
-                            print("📦 Found model at: \(path) (compiled)")
-                        } else {
-                            modelURL = url
-                            print("📦 Found model at: \(path)")
-                        }
-                        break
-                    }
-                }
-            }
-            
-            guard let finalURL = modelURL else {
-                print("❌ Could not find MultiLabelModelISpy model in bundle")
-                print("📂 Bundle path: \(Bundle.main.bundlePath)")
-                // List contents for debugging
-                if let contents = try? FileManager.default.contentsOfDirectory(atPath: Bundle.main.bundlePath) {
-                    print("📂 Bundle contents: \(contents.filter { $0.contains("mlmodel") || $0.contains("Model") })")
-                }
-                visionModel = nil
-                return
-            }
-            
-            let model = try MLModel(contentsOf: finalURL, configuration: config)
+            // IMPORTANT: First rename your model file to remove the space:
+            // "MultiLabelModelISpy 1.mlmodel" → "MultiLabelModelISpy.mlmodel"
+            // Then the class name will be "MultiLabelModelISpy"
+            let coreMLModel = try MultiLabelModelISpy(configuration: config)
+            let model = coreMLModel.model
             visionModel = try VNCoreMLModel(for: model)
             print("✅ CoreML model loaded successfully!")
-            
         } catch {
             print("❌ Failed to load CoreML model: \(error)")
             visionModel = nil

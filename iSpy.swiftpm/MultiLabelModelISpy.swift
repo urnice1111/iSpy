@@ -2,7 +2,7 @@
 // MultiLabelModelISpy.swift
 //
 // This file was automatically generated and should not be edited.
-//
+// This file works for object detection service, and was obtained by creating a temporal app (No playground).
 
 import CoreML
 

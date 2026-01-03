@@ -4,7 +4,8 @@ import SwiftUI
 struct HomeView: View {
     var gameState: GameState
     @State private var showOnboarding = false
-    @State  var showGame = false  // NUEVO
+    @State private var showGame = false
+    
     
     var body: some View {
         VStack {
@@ -19,43 +20,108 @@ struct HomeView: View {
                 
                 Spacer()
             }
-            .padding(.top, 20)
+//            .padding(.top, 20)
             .padding(.horizontal, 20)
- 
+            
             GameWidget(
                 title: "Road Trip",
                 imageName: "roadTrip",
                 onStartChallenge: {
                     if gameState.currentChallenge != nil {
                         showGame = true
-                    } else {showOnboarding = true}
+                    } else {
+                        showOnboarding = true
+                    }
                 },
                 isContinuing: gameState.currentChallenge != nil
             )
             .padding(.horizontal, 20)
             
+            // Recent items header
+            HStack {
+                Text("Recent Finds")
+                    .font(.title2)
+                    .bold()
+                    .foregroundStyle(.white)
+                Spacer()
+            }
+            .padding(.horizontal, 20)
+            .padding(.top, 8)
+            
+            // LazyHGrid inside a horizontal ScrollView
+            if gameState.collectedItems.isEmpty {
+                VStack(spacing: 20) {
+                    Image(systemName: "photo.on.rectangle.angled")
+                        .font(.system(size: 50))
+                        .foregroundStyle(.white.opacity(0.7))
+                    
+                    Text("No Items Collected Yet")
+                        .font(.title2)
+                        .fontWeight(.bold)
+                        .foregroundStyle(.white)
+                    
+//                    Text("Complete challenges to start your collection!")
+//                        .font(.body)
+//                        .foregroundStyle(.white.opacity(0.8))
+//                        .multilineTextAlignment(.center)
+//                        .padding(.horizontal)
+                }.padding(.top, 40)
+                
+            } else {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    LazyHStack(spacing: 16) {
+                        ForEach(gameState.collectedItems.prefix(6), id: \.id) { item in
+                            RecentItemCard(item: item)
+                            
+                        }
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 8)
+                }
+            }
+            
             Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(
-            Image("backgroundPhoto")
+            Image("backgroundPhotoBlur")
                 .resizable()
                 .scaledToFill()
-                .overlay(Color.black.opacity(0.25))
                 .ignoresSafeArea()
-                .blur(radius: 13)
         )
         .navigationTitle("Hey, Explorer!")
         .toolbarColorScheme(.dark, for: .navigationBar)
         .navigationDestination(isPresented: $showOnboarding) {
             OnboardingView(gameState: gameState)
         }
-        .navigationDestination(isPresented: $showGame) {GameView(gameState: gameState)}
+        .navigationDestination(isPresented: $showGame) {
+            GameView(gameState: gameState)
+        }
         .onAppear {
             gameState.loadState()
         }
     }
 }
+
+// Simple card for a recent item (customize to your model)
+struct RecentItemCard: View {
+    let item: CollectedItem
+    
+    var body: some View {
+        ZStack {
+            if let image = item.image {
+                image
+                    .resizable()
+                    .scaledToFill()
+            }
+        }
+        .frame(width: 180, height: 240)
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+
+        
+    }
+}
+
 struct GameWidget: View {
     var title: String
     var imageName: String
@@ -64,9 +130,7 @@ struct GameWidget: View {
     
     var body: some View {
         VStack(spacing: 20) {
-            
             HStack(spacing: 15) {
-                
                 Spacer()
                 Image(imageName)
                     .resizable()
@@ -75,11 +139,9 @@ struct GameWidget: View {
                     .clipShape(Circle())
                     .shadow(radius: 5)
                 
-                
                 Spacer()
                 
                 VStack(alignment: .leading, spacing: 4) {
-                    
                     Text("Challenge:")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
@@ -113,7 +175,6 @@ struct GameWidget: View {
                         .background(Color.green)
                         .clipShape(Capsule())
                         .shadow(radius: 5)
-                    
                 } else {
                     Text("Start Challenge!")
                         .font(.title3)
@@ -124,9 +185,7 @@ struct GameWidget: View {
                         .background(Color.blue)
                         .clipShape(Capsule())
                         .shadow(radius: 5)
-                    
                 }
-                
             }
         }
         .padding(20)
@@ -142,5 +201,6 @@ struct GameWidget: View {
         HomeView(gameState: GameState())
     } else {
         // Fallback on earlier versions
+        Text("Unsupported iOS version")
     }
 }

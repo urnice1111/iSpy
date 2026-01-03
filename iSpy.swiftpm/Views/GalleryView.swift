@@ -12,12 +12,10 @@ struct GalleryView: View {
         NavigationStack {
             ZStack {
                 // Background matching app theme
-                Image("backgroundPhoto")
+                Image("backgroundPhotoBlur")
                     .resizable()
                     .scaledToFill()
-                    .overlay(Color.black.opacity(0.25))
                     .ignoresSafeArea()
-                    .blur(radius: 13)
                 
                 if gameState.collectedItems.isEmpty {
                     VStack(spacing: 20) {
@@ -47,6 +45,8 @@ struct GalleryView: View {
                             }
                         }
                         .padding()
+                        .frame(width: min(UIScreen.main.bounds.width - 10, UIScreen.main.bounds.width))
+                        
                     }
                 }
             }

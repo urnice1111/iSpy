@@ -3,6 +3,7 @@ import SwiftUI
 @available(iOS 17.0, *)
 struct ProfileView: View {
     var gameState: GameState
+    @State var showingResetGameAlert: Bool = false
     
     init(gameState: GameState = GameState()) {
         self.gameState = gameState
@@ -11,133 +12,117 @@ struct ProfileView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                // Background matching app theme
-                Image("backgroundPhoto")
-                    .resizable()
-                    .scaledToFill()
-                    .overlay(Color.black.opacity(0.25))
-                    .ignoresSafeArea()
-                    .blur(radius: 13)
-                
-                ScrollView {
-                    VStack(spacing: 30) {
-                        // Profile header
-                        VStack(spacing: 15) {
-                            Image(systemName: "person.circle.fill")
-                                .font(.system(size: 100))
-                                .foregroundStyle(.white)
-                            
-                            Text("Explorer")
-                                .font(.system(size: 32, weight: .bold))
-                                .foregroundStyle(.white)
-                        }
-                        .padding(.top, 40)
+                VStack(spacing: 30) {
+                    // Profile header
+                    VStack(spacing: 15) {
+                        Image(systemName: "person.circle.fill")
+                            .font(.system(size: 100))
+                            .foregroundStyle(.white)
                         
-                        // Score card
-                        VStack(spacing: 20) {
-                            Text("Total Score")
-                                .font(.title2)
-                                .fontWeight(.semibold)
-                                .foregroundStyle(.white.opacity(0.8))
-                            
-                            Text("\(gameState.totalScore)")
-                                .font(.system(size: 60, weight: .bold))
-                                .foregroundStyle(.white)
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 30)
-                        .background(
-                            RoundedRectangle(cornerRadius: 20)
-                                .fill(Color.white.opacity(0.1))
-                                .background(
-                                    RoundedRectangle(cornerRadius: 20)
-                                        .fill(.ultraThinMaterial)
-                                )
-                        )
-                        .padding(.horizontal)
-                        
-                        // Statistics
-                        VStack(spacing: 20) {
-                            StatRow(
-                                icon: "checkmark.circle.fill",
-                                label: "Challenges Completed",
-                                value: "\(gameState.completedChallengesCount)",
-                                color: .green
-                            )
-                            
-                            StatRow(
-                                icon: "photo.fill",
-                                label: "Items Collected",
-                                value: "\(gameState.collectedItems.count)",
-                                color: .blue
-                            )
-                        }
-                        .padding(.horizontal)
-                        
-                        // Reset button (optional)
-                        Button {
-                            gameState.resetGame()
-                        } label: {
-                            Text("Reset Game")
-                                .font(.body)
-                                .foregroundStyle(.red)
-                                .frame(maxWidth: .infinity)
-                                .padding()
-                                .background(
-                                    RoundedRectangle(cornerRadius: 12)
-                                        .fill(Color.white.opacity(0.1))
-                                )
-                        }
-                        .padding(.horizontal)
-                        .padding(.top, 20)
-                        
-                        Spacer()
+                        Text("Explorer")
+                            .font(.system(size: 32, weight: .bold))
+                            .foregroundStyle(.white)
                     }
+                    .padding(.top, 40)
+                    
+                    
+                    statisticsWidget(gameState: gameState)
+                        .padding(.horizontal, 20)
+                    
+                    
+                    
+                    // Reset button (optional)
+                    Button {
+                        Task { @MainActor in
+                            showingResetGameAlert = true
+                        }
+                    } label: {
+                        Text("Reset Game")
+                            .font(.body)
+                            .foregroundStyle(.red)
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .fill(Color.white.opacity(0.1))
+                            )
+                    }
+                    .padding(.horizontal)
+                    .padding(.top, 20)
+                    
+                    Spacer()
                 }
             }
+            .background(
+                Image("backgroundPhotoBlur")
+                    .resizable()
+                    .scaledToFill()
+                    .ignoresSafeArea()
+            )
             .navigationTitle("Profile")
-            .toolbarColorScheme(.dark, for: .navigationBar)
-            .onAppear {
-                gameState.loadState()
+        }
+        .alert("Reset progress?",
+               isPresented: $showingResetGameAlert
+        ){
+            Button("Cancel", role: .cancel) { }
+            Button("Reset", role: .destructive){
+                gameState.resetGame()
             }
+        } message: {
+            Text("All progress so far will be deleted.")
+        }
+//        .toolbarColorScheme(.dark, for: .navigationBar)
+        .onAppear {
+            gameState.loadState()
         }
     }
+    
 }
 
-struct StatRow: View {
-    let icon: String
-    let label: String
-    let value: String
-    let color: Color
+@available(iOS 17.0, *)
+struct statisticsWidget: View {
+    let gameState: GameState
     
     var body: some View {
-        HStack {
-            Image(systemName: icon)
-                .font(.system(size: 24))
-                .foregroundStyle(color)
-                .frame(width: 40)
-            
-            Text(label)
-                .font(.system(size: 18))
-                .foregroundStyle(.white)
+        HStack{
+            Spacer()
+            VStack{
+                Text("Total points")
+                    .foregroundStyle(Color.black)
+                
+                Text("\(gameState.totalScore)")
+                    .foregroundStyle(Color.black)
+                    .font(.title)
+                    .bold()
+                //                    .padding(.top,5)
+                
+            }.multilineTextAlignment(.center)
             
             Spacer()
             
-            Text(value)
-                .font(.system(size: 24, weight: .bold))
-                .foregroundStyle(.white)
+            
+            VStack{
+                Text("Found objects")
+                    .foregroundStyle(Color.black)
+                Text("\(gameState.collectedItems.count)")
+                    .foregroundStyle(Color.black)
+                    .font(.title)
+                    .bold()
+                //                    .padding(.top,5)
+                
+            }.multilineTextAlignment(.center)
+            
+            Spacer()
         }
-        .padding()
-        .background(
-            RoundedRectangle(cornerRadius: 15)
-                .fill(Color.white.opacity(0.1))
-                .background(
-                    RoundedRectangle(cornerRadius: 15)
-                        .fill(.ultraThinMaterial)
-                )
-        )
+        .padding(.vertical, 20)
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, 35)
+        .background(Color.white)
+        .clipShape(RoundedRectangle(cornerRadius: 20))
+        
     }
 }
+
 
 #Preview {
     if #available(iOS 17.0, *) {
