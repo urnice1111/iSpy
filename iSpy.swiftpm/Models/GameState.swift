@@ -61,23 +61,34 @@ class GameState {
     }
     
     func saveState() {
-        // Save current challenge
-        if let challenge = currentChallenge {
-            if let encoded = try? JSONEncoder().encode(challenge) {
-                userDefaults.set(encoded, forKey: challengeKey)
+        // Capture current values to avoid race conditions
+        let challenge = currentChallenge
+        let items = collectedItems
+        let score = totalScore
+        let completedCount = completedChallengesCount
+        
+        // Perform encoding and saving on background queue to avoid UI freezes
+        DispatchQueue.global(qos: .utility).async { [weak self] in
+            guard let self = self else { return }
+            
+            // Save current challenge
+            if let challenge = challenge {
+                if let encoded = try? JSONEncoder().encode(challenge) {
+                    self.userDefaults.set(encoded, forKey: self.challengeKey)
+                }
+            } else {
+                self.userDefaults.removeObject(forKey: self.challengeKey)
             }
-        } else {
-            userDefaults.removeObject(forKey: challengeKey)
+            
+            // Save collected items
+            if let encoded = try? JSONEncoder().encode(items) {
+                self.userDefaults.set(encoded, forKey: self.collectedItemsKey)
+            }
+            
+            // Save score and stats
+            self.userDefaults.set(score, forKey: self.totalScoreKey)
+            self.userDefaults.set(completedCount, forKey: self.completedChallengesKey)
         }
-        
-        // Save collected items
-        if let encoded = try? JSONEncoder().encode(collectedItems) {
-            userDefaults.set(encoded, forKey: collectedItemsKey)
-        }
-        
-        // Save score and stats
-        userDefaults.set(totalScore, forKey: totalScoreKey)
-        userDefaults.set(completedChallengesCount, forKey: completedChallengesKey)
     }
     
     func loadState() {

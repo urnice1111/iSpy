@@ -7,6 +7,9 @@ class ObjectDetectionService {
     // The Vision CoreML model
     private var visionModel: VNCoreMLModel?
     
+    // Track if model is ready
+    private(set) var isModelReady: Bool = false
+    
     // Confidence threshold - adjust this value (0.0 to 1.0)
     // Lower = more detections but more false positives
     // Higher = fewer detections but more accurate
@@ -14,26 +17,37 @@ class ObjectDetectionService {
     
     @available(iOS 17.0, *)
     init() {
-        setupModel()
+        // Load model asynchronously to avoid blocking the main thread
+        setupModelAsync()
     }
     
-    /// Setup the CoreML model
+    /// Setup the CoreML model asynchronously to avoid UI freezing
     @available(iOS 17.0, *)
-    private func setupModel() {
-        let config = MLModelConfiguration()
-        config.computeUnits = .cpuAndGPU
+    private func setupModelAsync() {
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            let config = MLModelConfiguration()
+            config.computeUnits = .cpuAndGPU
 
-        do {
-            // IMPORTANT: First rename your model file to remove the space:
-            // "MultiLabelModelISpy 1.mlmodel" → "MultiLabelModelISpy.mlmodel"
-            // Then the class name will be "MultiLabelModelISpy"
-            let coreMLModel = try MultiLabelModelISpy(configuration: config)
-            let model = coreMLModel.model
-            visionModel = try VNCoreMLModel(for: model)
-            print("✅ CoreML model loaded successfully!")
-        } catch {
-            print("❌ Failed to load CoreML model: \(error)")
-            visionModel = nil
+            do {
+                // IMPORTANT: First rename your model file to remove the space:
+                // "MultiLabelModelISpy 1.mlmodel" → "MultiLabelModelISpy.mlmodel"
+                // Then the class name will be "MultiLabelModelISpy"
+                let coreMLModel = try MultiLabelModelISpy(configuration: config)
+                let model = coreMLModel.model
+                let visionModel = try VNCoreMLModel(for: model)
+                
+                DispatchQueue.main.async {
+                    self?.visionModel = visionModel
+                    self?.isModelReady = true
+                    print("✅ CoreML model loaded successfully!")
+                }
+            } catch {
+                print("❌ Failed to load CoreML model: \(error)")
+                DispatchQueue.main.async {
+                    self?.visionModel = nil
+                    self?.isModelReady = false
+                }
+            }
         }
     }
     

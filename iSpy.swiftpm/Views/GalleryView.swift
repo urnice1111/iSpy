@@ -4,33 +4,23 @@ import SwiftUI
 struct GalleryView: View {
     var gameState: GameState
     
-    init(gameState: GameState = GameState()) {
-        self.gameState = gameState
-    }
-    
     var body: some View {
         NavigationStack {
             ZStack {
-                // Background matching app theme
-                Image("backgroundPhotoBlur")
-                    .resizable()
-                    .scaledToFill()
-                    .ignoresSafeArea()
-                
                 if gameState.collectedItems.isEmpty {
                     VStack(spacing: 20) {
                         Image(systemName: "photo.on.rectangle.angled")
                             .font(.system(size: 80))
-                            .foregroundStyle(.white.opacity(0.7))
+                            .foregroundStyle(.black.opacity(0.7))
                         
                         Text("No Items Collected Yet")
                             .font(.title2)
                             .fontWeight(.bold)
-                            .foregroundStyle(.white)
+                            .foregroundStyle(.black)
                         
                         Text("Complete challenges to start your collection!")
                             .font(.body)
-                            .foregroundStyle(.white.opacity(0.8))
+                            .foregroundStyle(.black.opacity(0.8))
                             .multilineTextAlignment(.center)
                             .padding(.horizontal)
                     }
@@ -50,11 +40,16 @@ struct GalleryView: View {
                     }
                 }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(
+                Rectangle()
+                    .fill(Color("BackgroundColor"))
+                    .scaledToFill()
+                    .ignoresSafeArea()
+
+            )
             .navigationTitle("Gallery")
-            .toolbarColorScheme(.dark, for: .navigationBar)
-            .onAppear {
-                gameState.loadState()
-            }
+            .toolbarColorScheme(.light, for: .navigationBar)
         }
     }
 }
@@ -130,7 +125,7 @@ struct GalleryItemCard: View {
 
 #Preview {
     if #available(iOS 17.0, *) {
-        GalleryView()
+        GalleryView(gameState: GameState())
     } else {
         // Fallback on earlier versions
     }

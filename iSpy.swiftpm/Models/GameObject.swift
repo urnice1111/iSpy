@@ -70,8 +70,8 @@ struct ObjectDatabase {
     
     static func getRandomObjects(easy: Int = 3, medium: Int = 2, hard: Int = 1) -> [GameObject] {
         let easyObjects = allObjects.filter { $0.difficulty == .easy }.shuffled().prefix(easy)
-        let mediumObjects = allObjects.filter { $0.difficulty == .medium }.shuffled().prefix(medium)
-        let hardObjects = allObjects.filter { $0.difficulty == .hard }.shuffled().prefix(hard)
+//        let mediumObjects = allObjects.filter { $0.difficulty == .medium }.shuffled().prefix(medium)
+//        let hardObjects = allObjects.filter { $0.difficulty == .hard }.shuffled().prefix(hard)
         
         return Array(easyObjects)  /*Array(mediumObjects) + Array(hardObjects)*/
     }

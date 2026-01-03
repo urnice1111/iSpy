@@ -2,6 +2,38 @@ import Foundation
 import SwiftUI
 import UIKit
 
+// MARK: - Image Cache
+/// Singleton cache for collected item images to avoid repeated disk reads
+/// NSCache is thread-safe, so we can mark this as @unchecked Sendable
+final class ImageCache: @unchecked Sendable {
+    static let shared = ImageCache()
+    
+    private let cache = NSCache<NSString, UIImage>()
+    
+    private init() {
+        // Limit cache to ~50MB or 20 images
+        cache.totalCostLimit = 50 * 1024 * 1024
+        cache.countLimit = 20
+    }
+    
+    func image(forKey key: String) -> UIImage? {
+        cache.object(forKey: key as NSString)
+    }
+    
+    func setImage(_ image: UIImage, forKey key: String) {
+        let cost = image.jpegData(compressionQuality: 1.0)?.count ?? 0
+        cache.setObject(image, forKey: key as NSString, cost: cost)
+    }
+    
+    func removeImage(forKey key: String) {
+        cache.removeObject(forKey: key as NSString)
+    }
+    
+    func clearCache() {
+        cache.removeAllObjects()
+    }
+}
+
 struct CollectedItem: Identifiable, Codable {
     let id: UUID
     let object: GameObject
@@ -19,11 +51,22 @@ struct CollectedItem: Identifiable, Codable {
     
     var image: Image? {
         guard let imagePath = imagePath else { return nil }
+        
+        // Check cache first
+        if let cachedImage = ImageCache.shared.image(forKey: imagePath) {
+            return Image(uiImage: cachedImage)
+        }
+        
+        // Load from disk and cache
         let url = CollectedItem.imagesDirectory.appendingPathComponent(imagePath)
         guard let data = try? Data(contentsOf: url),
               let uiImage = UIImage(data: data) else {
             return nil
         }
+        
+        // Store in cache for future access
+        ImageCache.shared.setImage(uiImage, forKey: imagePath)
+        
         return Image(uiImage: uiImage)
     }
     

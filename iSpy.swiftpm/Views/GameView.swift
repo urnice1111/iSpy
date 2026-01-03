@@ -12,6 +12,7 @@ struct GameView: View {
     @State private var showingProcessingAlert = false
     @State private var showingEndGameAlert = false
     @State private var processingMessage = ""
+    @State private var isProcessingPhoto = false  // Prevents double-tap and shows loading
     @Environment(\.dismiss) var dismiss
     
     var challenge: GameChallenge? {
@@ -48,7 +49,7 @@ struct GameView: View {
                     }
                     
                     Button {
-                        $showingEndGameAlert.wrappedValue.toggle()
+                        showingEndGameAlert = true
                     } label : {
                         Text("End")
                             .foregroundStyle(Color.red)
@@ -127,15 +128,22 @@ struct GameView: View {
                             Button {
                                 processPhoto()
                             } label: {
-                                Text("Check Object")
-                                    .font(.title3)
-                                    .bold()
-                                    .foregroundStyle(.white)
-                                    .frame(maxWidth: .infinity)
-                                    .frame(height: 50)
-                                    .background(Color.blue)
-                                    .clipShape(Capsule())
+                                HStack(spacing: 8) {
+                                    if isProcessingPhoto {
+                                        ProgressView()
+                                            .tint(.white)
+                                    }
+                                    Text(isProcessingPhoto ? "Analyzing..." : "Check Object")
+                                }
+                                .font(.title3)
+                                .bold()
+                                .foregroundStyle(.white)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 50)
+                                .background(isProcessingPhoto ? Color.blue.opacity(0.6) : Color.blue)
+                                .clipShape(Capsule())
                             }
+                            .disabled(isProcessingPhoto)
                         }
                         .padding(.horizontal)
                     } else {
@@ -223,33 +231,36 @@ struct GameView: View {
         }
         
         timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak gameState] _ in
-            guard let gameState = gameState else { return }
-            
-            if let challenge = gameState.currentChallenge {
-                var updatedChallenge = challenge
-                updatedChallenge.checkExpiration()
-                
-                DispatchQueue.main.async { [weak gameState] in
-                    guard let gameState = gameState else { return }
-                    timeRemaining = updatedChallenge.remainingTime
-                    
-                    if updatedChallenge.isExpired || updatedChallenge.isCompleted {
-                        timer?.invalidate()
-                        timer = nil
-                        if updatedChallenge.isExpired {
-                            gameState.currentChallenge = updatedChallenge
-                            showingCompletionAlert = true
-                        } else if updatedChallenge.isCompleted {
-                            showingCompletionAlert = true
-                        }
-                    } else {
-                        gameState.currentChallenge = updatedChallenge
-                    }
-                }
-            } else {
+            guard let gameState = gameState,
+                  let challenge = gameState.currentChallenge else {
                 DispatchQueue.main.async {
                     timer?.invalidate()
                     timer = nil
+                }
+                return
+            }
+            
+            // Calculate remaining time without modifying gameState
+            let elapsed = Date().timeIntervalSince(challenge.startTime)
+            let total = TimeInterval(challenge.durationMinutes * 60)
+            let remaining = max(0, total - elapsed)
+            
+            DispatchQueue.main.async {
+                // Only update local state for timer display - avoids full view tree rebuild
+                timeRemaining = remaining
+                
+                // Only update gameState when there's a meaningful state change
+                if remaining <= 0 && !challenge.isExpired && !challenge.isCompleted {
+                    var expiredChallenge = challenge
+                    expiredChallenge.checkExpiration()
+                    gameState.currentChallenge = expiredChallenge
+                    timer?.invalidate()
+                    timer = nil
+                    showingCompletionAlert = true
+                } else if challenge.isCompleted {
+                    timer?.invalidate()
+                    timer = nil
+                    showingCompletionAlert = true
                 }
             }
         }
@@ -268,49 +279,66 @@ struct GameView: View {
     
     private func processPhoto() {
         guard let image = cameraService.capturedImage,
-              let challenge = gameState.currentChallenge else {
+              let challenge = gameState.currentChallenge,
+              !isProcessingPhoto else {
             return
         }
         
-        showingProcessingAlert = true
-        processingMessage = "Analyzing photo..."
+        // Set processing state immediately on main thread
+        isProcessingPhoto = true
         
-        // Process image for CoreML (placeholder)
+        // Prepare image for CoreML (quick operation, can stay on main thread)
         let preparedImage = cameraService.prepareForCoreML() ?? image
-        let detectedObjects = detectionService.detectObjects(in: preparedImage)
         
-        // Check if any of the detected objects match objects we're looking for
-        var foundAny = false
-        for object in challenge.objectsToFind {
-            if !challenge.isObjectFound(object) {
-                if detectionService.checkIfObjectFound(object.name, in: detectedObjects) {
+        // Capture detection service reference for background work
+        let detectionService = self.detectionService
+        
+        // Run ML inference on background thread to keep UI responsive
+        DispatchQueue.global(qos: .userInitiated).async {
+            // Heavy ML work happens here - OFF the main thread
+            let detectedObjects = detectionService.detectObjects(in: preparedImage)
+            
+            // Check if any of the detected objects match objects we're looking for
+            var foundObject: GameObject? = nil
+            for object in challenge.objectsToFind {
+                if !challenge.isObjectFound(object) {
+                    if detectionService.checkIfObjectFound(object.name, in: detectedObjects) {
+                        foundObject = object
+                        break
+                    }
+                }
+            }
+            
+            // Update UI back on main thread
+            DispatchQueue.main.async { [self] in
+                if let object = foundObject {
                     // Object found!
                     let imageData = image.jpegData(compressionQuality: 0.8)
                     gameState.completeObject(object, imageData: imageData)
-                    foundAny = true
                     
                     processingMessage = "Found: \(object.name)! +\(object.points) points"
-                    break
+                    showingProcessingAlert = true
+                } else {
+                    processingMessage = "No matching objects found. Keep looking!"
+                    showingProcessingAlert = true
                 }
-            }
-        }
-        
-        if !foundAny {
-            processingMessage = "No matching objects found. Keep looking!"
-        }
-        
-        // Check if challenge is complete
-        if let updatedChallenge = gameState.currentChallenge, updatedChallenge.isCompleted {
-            stopTimer()
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-                showingProcessingAlert = false
-                showingCompletionAlert = true
-            }
-        } else {
-            // Reset camera after processing
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-                showingProcessingAlert = false
-                cameraService.reTake()
+                
+                isProcessingPhoto = false
+                
+                // Check if challenge is complete
+                if let updatedChallenge = gameState.currentChallenge, updatedChallenge.isCompleted {
+                    stopTimer()
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                        showingProcessingAlert = false
+                        showingCompletionAlert = true
+                    }
+                } else {
+                    // Reset camera after processing
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                        showingProcessingAlert = false
+                        cameraService.reTake()
+                    }
+                }
             }
         }
     }

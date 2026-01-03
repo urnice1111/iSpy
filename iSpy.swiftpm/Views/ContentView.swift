@@ -21,6 +21,9 @@ struct ContentView: View {
                     ProfileView(gameState: gameState)
                 }
             }
+            .toolbarBackground(.visible, for: .tabBar)                // Make it visible
+            .toolbarColorScheme(.light, for: .tabBar)                 // Dark (black) icons/text
+            .tint(Color("ButtonColor"))
         } else {
             TabView {
                 NavigationStack {

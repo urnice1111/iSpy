@@ -5,10 +5,6 @@ struct ProfileView: View {
     var gameState: GameState
     @State var showingResetGameAlert: Bool = false
     
-    init(gameState: GameState = GameState()) {
-        self.gameState = gameState
-    }
-    
     var body: some View {
         NavigationStack {
             ZStack {
@@ -17,11 +13,11 @@ struct ProfileView: View {
                     VStack(spacing: 15) {
                         Image(systemName: "person.circle.fill")
                             .font(.system(size: 100))
-                            .foregroundStyle(.white)
+                            .foregroundStyle(.black)
                         
                         Text("Explorer")
                             .font(.system(size: 32, weight: .bold))
-                            .foregroundStyle(.white)
+                            .foregroundStyle(.black)
                     }
                     .padding(.top, 40)
                     
@@ -33,9 +29,7 @@ struct ProfileView: View {
                     
                     // Reset button (optional)
                     Button {
-                        Task { @MainActor in
-                            showingResetGameAlert = true
-                        }
+                        showingResetGameAlert = true
                     } label: {
                         Text("Reset Game")
                             .font(.body)
@@ -54,12 +48,14 @@ struct ProfileView: View {
                 }
             }
             .background(
-                Image("backgroundPhotoBlur")
-                    .resizable()
+                Rectangle()
+                    .fill(Color("BackgroundColor"))
                     .scaledToFill()
                     .ignoresSafeArea()
             )
             .navigationTitle("Profile")
+            .toolbarColorScheme(.light, for: .navigationBar)
+            
         }
         .alert("Reset progress?",
                isPresented: $showingResetGameAlert
@@ -70,10 +66,6 @@ struct ProfileView: View {
             }
         } message: {
             Text("All progress so far will be deleted.")
-        }
-//        .toolbarColorScheme(.dark, for: .navigationBar)
-        .onAppear {
-            gameState.loadState()
         }
     }
     
@@ -117,7 +109,7 @@ struct statisticsWidget: View {
         .padding(.vertical, 20)
         .frame(maxWidth: .infinity)
         .padding(.horizontal, 35)
-        .background(Color.white)
+        .background(Color("WidgetColor"))
         .clipShape(RoundedRectangle(cornerRadius: 20))
         
     }
@@ -126,7 +118,7 @@ struct statisticsWidget: View {
 
 #Preview {
     if #available(iOS 17.0, *) {
-        ProfileView()
+        ProfileView(gameState: GameState())
     } else {
         // Fallback on earlier versions
     }

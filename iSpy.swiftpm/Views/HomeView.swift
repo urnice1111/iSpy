@@ -12,15 +12,15 @@ struct HomeView: View {
             HStack {
                 Text("\(gameState.totalScore)")
                     .font(.system(size: 50, weight: .bold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.black)
                 
                 Text("Points")
                     .font(.system(size: 35))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.black)
                 
                 Spacer()
             }
-//            .padding(.top, 20)
+            //            .padding(.top, 20)
             .padding(.horizontal, 20)
             
             GameWidget(
@@ -42,7 +42,7 @@ struct HomeView: View {
                 Text("Recent Finds")
                     .font(.title2)
                     .bold()
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.black)
                 Spacer()
             }
             .padding(.horizontal, 20)
@@ -53,18 +53,18 @@ struct HomeView: View {
                 VStack(spacing: 20) {
                     Image(systemName: "photo.on.rectangle.angled")
                         .font(.system(size: 50))
-                        .foregroundStyle(.white.opacity(0.7))
+                        .foregroundStyle(.black.opacity(0.7))
                     
                     Text("No Items Collected Yet")
                         .font(.title2)
                         .fontWeight(.bold)
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.black.opacity(0.7))
                     
-//                    Text("Complete challenges to start your collection!")
-//                        .font(.body)
-//                        .foregroundStyle(.white.opacity(0.8))
-//                        .multilineTextAlignment(.center)
-//                        .padding(.horizontal)
+                    //                    Text("Complete challenges to start your collection!")
+                    //                        .font(.body)
+                    //                        .foregroundStyle(.white.opacity(0.8))
+                    //                        .multilineTextAlignment(.center)
+                    //                        .padding(.horizontal)
                 }.padding(.top, 40)
                 
             } else {
@@ -84,22 +84,22 @@ struct HomeView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(
-            Image("backgroundPhotoBlur")
-                .resizable()
+            Rectangle()
+                .fill(Color("BackgroundColor"))
                 .scaledToFill()
                 .ignoresSafeArea()
         )
         .navigationTitle("Hey, Explorer!")
-        .toolbarColorScheme(.dark, for: .navigationBar)
+        .toolbarColorScheme(.light, for: .navigationBar) // makes title/items dark (black)
+        .toolbarBackground(Color("BackgroundColor"), for: .navigationBar)
+        .toolbarBackground(.visible, for: .navigationBar)
         .navigationDestination(isPresented: $showOnboarding) {
             OnboardingView(gameState: gameState)
         }
         .navigationDestination(isPresented: $showGame) {
             GameView(gameState: gameState)
         }
-        .onAppear {
-            gameState.loadState()
-        }
+        
     }
 }
 
@@ -117,7 +117,7 @@ struct RecentItemCard: View {
         }
         .frame(width: 180, height: 240)
         .clipShape(RoundedRectangle(cornerRadius: 16))
-
+        
         
     }
 }
@@ -144,7 +144,7 @@ struct GameWidget: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Challenge:")
                         .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(.black)
                         .textCase(.uppercase)
                     
                     Text(title)
@@ -154,7 +154,7 @@ struct GameWidget: View {
                     
                     Text("Find 6 objects in your route!")
                         .font(.body)
-                        .foregroundStyle(.gray)
+                        .foregroundStyle(.black)
                         .multilineTextAlignment(.leading)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -182,7 +182,7 @@ struct GameWidget: View {
                         .foregroundStyle(.white)
                         .frame(maxWidth: .infinity)
                         .frame(height: 55)
-                        .background(Color.blue)
+                        .background(Color("ButtonColor"))
                         .clipShape(Capsule())
                         .shadow(radius: 5)
                 }
@@ -190,7 +190,7 @@ struct GameWidget: View {
         }
         .padding(20)
         .frame(maxWidth: .infinity)
-        .background(Color.white)
+        .background(Color("WidgetColor"))
         .clipShape(RoundedRectangle(cornerRadius: 30))
         .shadow(color: .black.opacity(0.2), radius: 10, x: 0, y: 5)
     }

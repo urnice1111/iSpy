@@ -15,13 +15,6 @@ struct OnboardingView: View {
     
     var body: some View {
         ZStack {
-            // Background matching HomeView style
-            Image("backgroundPhoto")
-                .resizable()
-                .scaledToFill()
-                .overlay(Color.black.opacity(0.25))
-                .ignoresSafeArea()
-                .blur(radius: 13)
             
             TabView(selection: $currentPage) {
                 // Slide 1: How to Play
@@ -34,11 +27,17 @@ struct OnboardingView: View {
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
             .indexViewStyle(.page(backgroundDisplayMode: .always))
-            .overlay(alignment: .top) {
+            .overlay(alignment: .bottom) {
                 PageIndicator(count: 2, currentIndex: currentPage)
                     .padding(.top, 12)
             }
         }
+        .background(
+            Rectangle()
+                .fill(Color("BackgroundColor"))
+                .scaledToFill()
+                .ignoresSafeArea()
+        )
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .tabBar)
 //        .toolbar {
@@ -60,11 +59,11 @@ struct InstructionsSlide: View {
             VStack(spacing: 20) {
                 Image(systemName: "camera.viewfinder")
                     .font(.system(size: 80))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.black)
                 
                 Text("How to Play")
                     .font(.system(size: 40, weight: .bold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.black)
             }
             
             VStack(alignment: .leading, spacing: 20) {
@@ -101,11 +100,11 @@ struct InstructionRow: View {
         HStack(spacing: 15) {
             Image(systemName: icon)
                 .font(.system(size: 30))
-                .foregroundStyle(.white)
+                .foregroundStyle(Color("ButtonColor"))
             
             Text(text)
                 .font(.system(size: 20))
-                .foregroundStyle(.white)
+                .foregroundStyle(.black)
         }
     }
 }
@@ -123,7 +122,7 @@ struct ObjectsSlide: View {
             
             Text("Objects to Find")
                 .font(.system(size: 40, weight: .bold))
-                .foregroundStyle(.white)
+                .foregroundStyle(.black)
                 .padding(.top, 40)
             
             ScrollView {
@@ -147,7 +146,7 @@ struct ObjectsSlide: View {
                     .frame(width: min(UIScreen.main.bounds.width - 80, UIScreen.main.bounds.width))
                     
                     .frame(height: 55)
-                    .background(Color.blue)
+                    .background(Color("ButtonColor"))
                     .clipShape(Capsule())
                     .shadow(radius: 5)
             }
