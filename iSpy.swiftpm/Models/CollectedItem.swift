@@ -4,7 +4,7 @@ import UIKit
 
 // MARK: - Image Cache
 /// Singleton cache for collected item images to avoid repeated disk reads
-/// NSCache is thread-safe, so we can mark this as @unchecked Sendable
+/// NSCache is thread-safe, so we can mark this as @unchecked Sendable (Apples amazing)
 final class ImageCache: @unchecked Sendable {
     static let shared = ImageCache()
     
@@ -40,13 +40,15 @@ struct CollectedItem: Identifiable, Codable {
     let imagePath: String?  // Store path instead of data
     let timestamp: Date
     let challengeId: UUID
+    var aiDescription: String?  // AI-generated description (cached)
     
-    init(id: UUID = UUID(), object: GameObject, imagePath: String?, timestamp: Date = Date(), challengeId: UUID) {
+    init(id: UUID = UUID(), object: GameObject, imagePath: String?, timestamp: Date = Date(), challengeId: UUID, aiDescription: String? = nil) {
         self.id = id
         self.object = object
         self.imagePath = imagePath
         self.timestamp = timestamp
         self.challengeId = challengeId
+        self.aiDescription = aiDescription
     }
     
     var image: Image? {

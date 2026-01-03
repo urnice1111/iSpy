@@ -116,5 +116,16 @@ class GameState {
         completedChallengesCount = 0
         saveState()
     }
+    
+    /// Update the AI-generated description for a collected item
+    /// - Parameters:
+    ///   - itemId: The UUID of the item to update
+    ///   - description: The AI-generated description to save
+    func updateItemDescription(_ itemId: UUID, description: String) {
+        if let index = collectedItems.firstIndex(where: { $0.id == itemId }) {
+            collectedItems[index].aiDescription = description
+            saveState()
+        }
+    }
 }
 

@@ -31,12 +31,20 @@ struct GalleryView: View {
                             GridItem(.flexible(), spacing: 15)
                         ], spacing: 15) {
                             ForEach(gameState.collectedItems) { item in
-                                GalleryItemCard(item: item)
+                                NavigationLink {
+                                    // Navigate to detail view based on iOS version
+                                    if #available(iOS 26.0, *) {
+                                        ItemDetailView(item: item, gameState: gameState)
+                                    } else {
+                                        ItemDetailViewFallback(item: item)
+                                    }
+                                } label: {
+                                    GalleryItemCard(item: item)
+                                }
+                                .buttonStyle(.plain)
                             }
                         }
                         .padding()
-                        .frame(width: min(UIScreen.main.bounds.width - 10, UIScreen.main.bounds.width))
-                        
                     }
                 }
             }

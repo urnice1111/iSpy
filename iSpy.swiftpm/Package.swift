@@ -20,8 +20,8 @@ let package = Package(
             teamIdentifier: "47V6XN83NZ",
             displayVersion: "1.0",
             bundleVersion: "1",
-            appIcon: .placeholder(icon: .calendar),
-            accentColor: .presetColor(.blue),
+            appIcon: .placeholder(icon: .car),
+            accentColor: .presetColor(.orange),
             supportedDeviceFamilies: [
                 .pad,
                 .phone
@@ -39,11 +39,9 @@ let package = Package(
             name: "AppModule",
             path: ".",
             resources: [
-                /// So this line changes everything lol, no Resources folder in the project, what a headache lol.
-                // .process("Resources"),  
                 .copy("MLFile/MultiLabelModelISpy.mlmodelc")
             ]
         )
     ],
-    swiftLanguageVersions: [.v6]
+    swiftLanguageVersions: [.version("6")]
 )
