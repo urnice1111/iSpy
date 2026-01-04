@@ -5,38 +5,55 @@ struct ContentView: View {
     var gameState: GameState
     
     var body: some View {
-        if #available (iOS 18.0, *){
-            TabView{
-                Tab("Home", systemImage: "house"){
-                    NavigationStack{
-                        HomeView(gameState: gameState)
+        Group {
+            if #available(iOS 18.0, *) {
+                TabView {
+                    Tab("Home", systemImage: "house.fill") {
+                        NavigationStack {
+                            HomeView(gameState: gameState)
+                        }
+                    }
+                    
+                    Tab("Gallery", systemImage: "photo.stack.fill") {
+                        GalleryView(gameState: gameState)
+                    }
+                    
+                    Tab("Profile", systemImage: "person.fill") {
+                        ProfileView(gameState: gameState)
                     }
                 }
-                
-                Tab("Gallery", systemImage: "photo"){
+//                .toolbarBackground(.visible, for: .tabBar)
+//                .toolbarBackground(Color("BackgroundColor").opacity(0.9), for: .tabBar)
+                .toolbarColorScheme(.light, for: .tabBar)
+                .tint(.purple)
+            } else {
+                TabView {
+                    NavigationStack {
+                        HomeView(gameState: gameState)
+                    }
+                    .tabItem { 
+                        Label("Home", systemImage: "house.fill")
+                    }
+                    
                     GalleryView(gameState: gameState)
-                }
-                
-                Tab("Profile", systemImage: "person"){
+                        .tabItem { 
+                            Label("Gallery", systemImage: "photo.stack.fill")
+                        }
+                    
                     ProfileView(gameState: gameState)
+                        .tabItem { 
+                            Label("Profile", systemImage: "person.fill")
+                        }
                 }
-            }
-            .toolbarBackground(.visible, for: .tabBar)                // Make it visible
-            .toolbarColorScheme(.light, for: .tabBar)                 // Dark (black) icons/text
-            .tint(Color("ButtonColor"))
-        } else {
-            TabView {
-                NavigationStack {
-                    HomeView(gameState: gameState)
-                }
-                .tabItem { Label("Home", systemImage: "house") }
-                
-                GalleryView(gameState: gameState)
-                    .tabItem { Label("Gallery", systemImage: "photo") }
-                
-                ProfileView(gameState: gameState)
-                    .tabItem { Label("Profile", systemImage: "person") }
+                .tint(.purple)
             }
         }
+        .preferredColorScheme(.light)
+    }
+}
+
+#Preview {
+    if #available(iOS 17.0, *) {
+        ContentView(gameState: GameState())
     }
 }

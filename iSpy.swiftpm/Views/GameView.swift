@@ -14,6 +14,7 @@ struct GameView: View {
     @State private var processingMessage = ""
     @State private var isProcessingPhoto = false  // Prevents double-tap and shows loading
     @Environment(\.dismiss) var dismiss
+    @Binding var popToRoot: Bool
     
     var challenge: GameChallenge? {
         gameState.currentChallenge
@@ -58,7 +59,7 @@ struct GameView: View {
                     Spacer()
                     
                     Button {
-                        dismiss()
+                        popToRoot = false
                     } label: {
                         Image(systemName: "xmark")
                             
@@ -194,18 +195,18 @@ struct GameView: View {
         .alert("End game?", isPresented: $showingEndGameAlert){
             Button("End", role: .destructive){
                 gameState.finishChallenge()
-                dismiss()
+                popToRoot = false
             }
             
             Button("Cancel", role: .cancel){}
         } message: {
-            Text("The game will be ended and you will be redirected to the main menu.")
+            Text("You will return to Home and your current challenge will end.")
         }
         
         .alert("Challenge Complete!", isPresented: $showingCompletionAlert) {
             Button("OK") {
                 gameState.finishChallenge()
-                dismiss()
+                popToRoot = false
             }
         } message: {
             if let challenge = challenge {
@@ -216,6 +217,7 @@ struct GameView: View {
                 }
             }
         }
+        .tint(nil)
     }
     
     private func setupCamera() {
@@ -444,9 +446,8 @@ struct ObjectStatusCard: View {
 
 #Preview {
     if #available(iOS 17.0, *) {
-        GameView(gameState: GameState())
+        GameView(gameState: GameState(), popToRoot: .constant(false))
     } else {
         // Fallback on earlier versions
     }
 }
-

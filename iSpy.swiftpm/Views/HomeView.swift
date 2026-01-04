@@ -6,122 +6,219 @@ struct HomeView: View {
     @State private var showOnboarding = false
     @State private var showGame = false
     
-    
     var body: some View {
-        VStack {
-            HStack {
-                Text("\(gameState.totalScore)")
-                    .font(.system(size: 50, weight: .bold))
-                    .foregroundStyle(.black)
-                
-                Text("Points")
-                    .font(.system(size: 35))
-                    .foregroundStyle(.black)
-                
-                Spacer()
-            }
-            //            .padding(.top, 20)
-            .padding(.horizontal, 20)
-            
-            GameWidget(
-                title: "Road Trip",
-                imageName: "roadTrip",
-                onStartChallenge: {
-                    if gameState.currentChallenge != nil {
-                        showGame = true
-                    } else {
-                        showOnboarding = true
-                    }
-                },
-                isContinuing: gameState.currentChallenge != nil
-            )
-            .padding(.horizontal, 20)
-            
-            // Recent items header
-            HStack {
-                Text("Recent Finds")
-                    .font(.title2)
-                    .bold()
-                    .foregroundStyle(.black)
-                Spacer()
-            }
-            .padding(.horizontal, 20)
-            .padding(.top, 8)
-            
-            // LazyHGrid inside a horizontal ScrollView
-            if gameState.collectedItems.isEmpty {
-                VStack(spacing: 20) {
-                    Image(systemName: "photo.on.rectangle.angled")
-                        .font(.system(size: 50))
-                        .foregroundStyle(.black.opacity(0.7))
+        NavigationStack{
+            ScrollView {
+                VStack(spacing: 0) {
                     
-                    Text("No Items Collected Yet")
-                        .font(.title2)
-                        .fontWeight(.bold)
-                        .foregroundStyle(.black.opacity(0.7))
+                    PointsWidget(score: gameState.totalScore)
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 16)
                     
-                    //                    Text("Complete challenges to start your collection!")
-                    //                        .font(.body)
-                    //                        .foregroundStyle(.white.opacity(0.8))
-                    //                        .multilineTextAlignment(.center)
-                    //                        .padding(.horizontal)
-                }.padding(.top, 40)
-                
-            } else {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    LazyHStack(spacing: 16) {
-                        ForEach(gameState.collectedItems.prefix(6), id: \.id) { item in
-                            RecentItemCard(item: item)
-                            
-                        }
+                    GameWidget(
+                        title: "Road Trip",
+                        imageName: "car",
+                        onStartChallenge: {
+                            if gameState.currentChallenge != nil {
+                                showGame = true
+                            } else {
+                                showOnboarding = true
+                            }
+                        },
+                        isContinuing: gameState.currentChallenge != nil
+                    )
+                    .padding(.horizontal, 20)
+                    
+                    HStack {
+                        Text("At a Glance")
+                            .font(.title2)
+                            .fontWeight(.bold)
+                            .foregroundStyle(.primary)
+                        Spacer()
                     }
                     .padding(.horizontal, 20)
-                    .padding(.vertical, 8)
+                    .padding(.top, 24)
+                    
+                    HStack(spacing: 20){
+                        JourneyStatCardHome(
+                            icon: "checkmark.circle.fill",
+                            value: "\(gameState.collectedItems.count)",
+                            label: "Objects Found",
+                            color: .green
+                        )
+                        
+                        JourneyStatCardHome(
+                            icon: "flag.fill",
+                            value: "\(gameState.completedChallengesCount)",
+                            label: "Trips",
+                            color: .green
+                        )
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.top, 5)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    
+                    
+                    
+                    
+                    
+                    
+                    // Recent items header
+                    HStack {
+                        Text("Recent Finds")
+                            .font(.title2)
+                            .fontWeight(.bold)
+                            .foregroundStyle(.primary)
+                        Spacer()
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.top, 24)
+                    .padding(.bottom, 8)
+                    
+                    // LazyHGrid inside a horizontal ScrollView
+                    if gameState.collectedItems.isEmpty {
+                        HStack(spacing: 16) {
+                            Image(systemName: "photo.on.rectangle.angled")
+                                .font(.system(size: 50))
+                                .foregroundStyle(.secondary)
+                            
+                            VStack {
+                                Text("No Items Collected Yet")
+                                    .font(.title3)
+                                    .fontWeight(.semibold)
+                                    .foregroundStyle(.secondary)
+                                Text("Complete challenges to start your collection!")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.tertiary)
+                                    .multilineTextAlignment(.center)
+                            }
+                            
+                            
+                        }
+                        .padding(.top, 40)
+                        .padding(.horizontal, 40)
+                        
+                    } else {
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            LazyHStack(spacing: 16) {
+                                ForEach(gameState.collectedItems.prefix(6), id: \.id) { item in
+                                    RecentItemCard(item: item)
+                                }
+                            }
+                            .padding(.horizontal, 20)
+                            .padding(.vertical, 8)
+                        }
+                    }
+                    
+                    Spacer()
                 }
+                
             }
-            
-            Spacer()
+            .background(Color("BackgroundColor"))
+            .navigationTitle("Hey, Explorer!")
+            .navigationBarTitleDisplayMode(.large)
+            .navigationDestination(isPresented: $showOnboarding) {
+                OnboardingView(gameState: gameState, popToRoot: $showOnboarding)
+            }
+            .navigationDestination(isPresented: $showGame) {
+                GameView(gameState: gameState, popToRoot: $showGame)
+            }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(
-            Rectangle()
-                .fill(Color("BackgroundColor"))
-                .scaledToFill()
-                .ignoresSafeArea()
-        )
-        .navigationTitle("Hey, Explorer!")
-        .toolbarColorScheme(.light, for: .navigationBar) // makes title/items dark (black)
-        .toolbarBackground(Color("BackgroundColor"), for: .navigationBar)
-        .toolbarBackground(.visible, for: .navigationBar)
-        .navigationDestination(isPresented: $showOnboarding) {
-            OnboardingView(gameState: gameState)
-        }
-        .navigationDestination(isPresented: $showGame) {
-            GameView(gameState: gameState)
-        }
-        
     }
 }
 
-// Simple card for a recent item (customize to your model)
+// MARK: - Recent Item Card
 struct RecentItemCard: View {
     let item: CollectedItem
     
     var body: some View {
-        ZStack {
+        ZStack(alignment: .bottom) {
             if let image = item.image {
                 image
                     .resizable()
                     .scaledToFill()
+            } else {
+                Rectangle()
+                    .fill(Color.gray.opacity(0.2))
             }
+            
+            // Material overlay with object name
+            VStack(alignment: .leading, spacing: 4) {
+                Text(item.object.name)
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(.white)
+                    .lineLimit(1)
+                
+                Text("\(item.object.points) pts")
+                    .font(.caption)
+                    .foregroundStyle(.white.opacity(0.8))
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(12)
+            .background(
+                LinearGradient(
+                    colors: [.clear, .black.opacity(0.7)],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            )
         }
         .frame(width: 180, height: 240)
         .clipShape(RoundedRectangle(cornerRadius: 16))
-        
-        
+        .shadow(color: .black.opacity(0.1), radius: 8, y: 4)
     }
 }
+// MARK: - Points Widget
 
+
+struct PointsWidget: View {
+    
+    @State var score: Int
+    
+    var body: some View {
+        HStack {
+            ZStack{
+                HStack{
+                    ZStack{
+                        Circle()
+                            .foregroundStyle(Color.yellow.opacity(0.2))
+                            .frame(width: 50, height: 50)
+                        
+                        Image(systemName: "star.fill")
+                            .foregroundStyle(Color.yellow)
+                            .font(.system(size: 30))
+                    }
+                    
+                    Spacer()
+                }
+                
+                VStack{
+                    Text("\(score)")
+                        .font(.title)
+                        .bold()
+                    
+                    Text("Total Points")
+                        .font(.title3)
+                        .bold()
+                        .foregroundStyle(Color.secondary)
+                }
+            }
+            .padding(20)
+            .frame(maxWidth: .infinity)
+            .background(
+                RoundedRectangle(cornerRadius: 24)
+                    .fill(.ultraThinMaterial)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 24)
+                            .fill(Color("WidgetColor2").opacity(0.5))
+                    )
+            )
+            .shadow(color: .black.opacity(0.08), radius: 12, y: 6)
+        }
+    }
+}
+// MARK: - Game Widget
 struct GameWidget: View {
     var title: String
     var imageName: String
@@ -130,33 +227,33 @@ struct GameWidget: View {
     
     var body: some View {
         VStack(spacing: 20) {
-            HStack(spacing: 15) {
-                Spacer()
-                Image(imageName)
+            HStack(spacing: 16) {
+                Image(systemName: imageName)
                     .resizable()
                     .scaledToFill()
-                    .frame(width: 120, height: 120)
-                    .clipShape(Circle())
-                    .shadow(radius: 5)
+                    .frame(width: 65, height: 70)
+                    .shadow(color: .black.opacity(0.1), radius: 8, y: 4)
+                    .padding()
+                    .foregroundStyle(.purple)
                 
-                Spacer()
-                
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Challenge:")
-                        .font(.subheadline)
-                        .foregroundStyle(.black)
-                        .textCase(.uppercase)
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("CHALLENGE")
+                        .font(.caption)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(.secondary)
+                        .tracking(1)
                     
                     Text(title)
-                        .font(.system(size: 22, weight: .bold))
-                        .foregroundStyle(.black)
-                        .multilineTextAlignment(.leading)
+                        .font(.title2)
+                        .fontWeight(.bold)
+                        .foregroundStyle(.primary)
                     
                     Text("Find 6 objects in your route!")
-                        .font(.body)
-                        .foregroundStyle(.black)
-                        .multilineTextAlignment(.leading)
-                        .fixedSize(horizontal: false, vertical: true)
+                        .font(.subheadline)
+                        .foregroundStyle(.primary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                        .allowsTightening(true)
                 }
                 
                 Spacer()
@@ -165,42 +262,89 @@ struct GameWidget: View {
             Button {
                 onStartChallenge()
             } label: {
-                if isContinuing {
-                    Text("Continue game")
-                        .font(.title3)
-                        .bold()
-                        .foregroundStyle(.white)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 55)
-                        .background(Color.green)
-                        .clipShape(Capsule())
-                        .shadow(radius: 5)
-                } else {
-                    Text("Start Challenge!")
-                        .font(.title3)
-                        .bold()
-                        .foregroundStyle(.white)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 55)
-                        .background(Color("ButtonColor"))
-                        .clipShape(Capsule())
-                        .shadow(radius: 5)
-                }
+                
+                Text(isContinuing ? "Continue Game" : "Start Challenge")
+                    .font(.headline)
+                    .fontWeight(.semibold)
+                
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 52)
+                    .background(
+                        Group {
+                            if isContinuing {
+                                LinearGradient(
+                                    colors: [.green, .mint],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            } else {
+                                LinearGradient(
+                                    colors: [.purple, .pink],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            }
+                        }
+                    )
+                    .clipShape(Capsule())
+                    .shadow(color: isContinuing ? .green.opacity(0.3) : .purple.opacity(0.3), radius: 8, y: 4)
             }
         }
         .padding(20)
         .frame(maxWidth: .infinity)
-        .background(Color("WidgetColor"))
-        .clipShape(RoundedRectangle(cornerRadius: 30))
-        .shadow(color: .black.opacity(0.2), radius: 10, x: 0, y: 5)
+        .background(
+            RoundedRectangle(cornerRadius: 24)
+                .fill(.ultraThinMaterial)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 24)
+                        .fill(Color("WidgetColor").opacity(0.5))
+                )
+        )
+        .shadow(color: .black.opacity(0.08), radius: 12, y: 6)
+    }
+}
+
+// MARK: - Journey Stat Card (Home View)
+
+struct JourneyStatCardHome: View {
+    let icon: String
+    let value: String
+    let label: String
+    let color: Color
+    
+    var body: some View {
+        VStack(spacing: 8) {
+            Image(systemName: icon)
+                .font(.headline)
+                .foregroundStyle(color)
+            
+            Text(value)
+                .font(.title)
+                .fontWeight(.bold)
+                .foregroundStyle(.primary)
+            
+            Text(label)
+                .font(.system(size: 18))
+                .bold()
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 16)
+        .background(
+            RoundedRectangle(cornerRadius: 24)
+                .fill(Color("WidgetColor"))
+        )
     }
 }
 
 #Preview {
-    if #available(iOS 17.0, *) {
-        HomeView(gameState: GameState())
-    } else {
-        // Fallback on earlier versions
-        Text("Unsupported iOS version")
+    NavigationStack {
+        if #available(iOS 17.0, *) {
+            HomeView(gameState: GameState())
+        } else {
+            Text("Unsupported iOS version")
+        }
     }
 }
+

@@ -6,30 +6,46 @@ struct GalleryView: View {
     
     var body: some View {
         NavigationStack {
-            ZStack {
+            Group {
                 if gameState.collectedItems.isEmpty {
+                    // Empty state
                     VStack(spacing: 20) {
-                        Image(systemName: "photo.on.rectangle.angled")
-                            .font(.system(size: 80))
-                            .foregroundStyle(.black.opacity(0.7))
+                        ZStack {
+                            Circle()
+                                .fill(Color.secondary.opacity(0.1))
+                                .frame(width: 120, height: 120)
+                            
+                            Image(systemName: "photo.on.rectangle.angled")
+                                .font(.system(size: 50))
+                                .foregroundStyle(.secondary)
+                        }
                         
-                        Text("No Items Collected Yet")
-                            .font(.title2)
-                            .fontWeight(.bold)
-                            .foregroundStyle(.black)
-                        
-                        Text("Complete challenges to start your collection!")
-                            .font(.body)
-                            .foregroundStyle(.black.opacity(0.8))
-                            .multilineTextAlignment(.center)
-                            .padding(.horizontal)
+                        VStack(spacing: 8) {
+                            Text("No Items Collected Yet")
+                                .font(.title2)
+                                .fontWeight(.bold)
+                                .foregroundStyle(.primary)
+                            
+                            Text("Complete challenges to start your collection!")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                                .multilineTextAlignment(.center)
+                        }
+                        .padding(.horizontal, 40)
                     }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
                     ScrollView {
+                        
+                        HStack{
+                            Text("\(gameState.collectedItems.count) objects found")
+                            Spacer()
+                        }
+                        .padding(.horizontal, 20)
                         LazyVGrid(columns: [
-                            GridItem(.flexible(), spacing: 15),
-                            GridItem(.flexible(), spacing: 15)
-                        ], spacing: 15) {
+                            GridItem(.flexible(), spacing: 16),
+                            GridItem(.flexible(), spacing: 16)
+                        ], spacing: 16) {
                             ForEach(gameState.collectedItems) { item in
                                 NavigationLink {
                                     // Navigate to detail view based on iOS version
@@ -44,24 +60,20 @@ struct GalleryView: View {
                                 .buttonStyle(.plain)
                             }
                         }
-                        .padding()
+                        .padding(20)
                     }
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(
-                Rectangle()
-                    .fill(Color("BackgroundColor"))
-                    .scaledToFill()
-                    .ignoresSafeArea()
-
-            )
+            .background(Color("BackgroundColor"))
             .navigationTitle("Gallery")
-            .toolbarColorScheme(.light, for: .navigationBar)
+            .navigationBarTitleDisplayMode(.large)
+            .scrollContentBackground(.hidden)
         }
     }
 }
 
+// MARK: - Gallery Item Card
 struct GalleryItemCard: View {
     let item: CollectedItem
     
@@ -74,7 +86,7 @@ struct GalleryItemCard: View {
     }
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 12) {
             // Image
             ZStack {
                 if let image = item.image {
@@ -83,51 +95,56 @@ struct GalleryItemCard: View {
                         .scaledToFill()
                 } else {
                     Rectangle()
-                        .fill(Color.gray.opacity(0.3))
+                        .fill(Color.secondary.opacity(0.2))
                     
                     Image(systemName: "photo")
-                        .font(.system(size: 40))
-                        .foregroundStyle(.gray)
+                        .font(.system(size: 36))
+                        .foregroundStyle(.secondary)
                 }
             }
-            .frame(height: 150)
+            .frame(height: 140)
             .clipShape(RoundedRectangle(cornerRadius: 12))
             
             // Object info
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 6) {
                 Text(item.object.name)
-                    .font(.system(size: 16, weight: .bold))
-                    .foregroundStyle(.white)
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(.primary)
                     .lineLimit(1)
                 
-                HStack {
+                HStack(spacing: 6) {
+                    // Difficulty badge
                     Text(item.object.difficulty.rawValue.capitalized)
-                        .font(.system(size: 12, weight: .medium))
+                        .font(.caption2)
+                        .fontWeight(.medium)
                         .foregroundStyle(difficultyColor)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(difficultyColor.opacity(0.15))
+                        .clipShape(Capsule())
                     
-                    Text("•")
-                        .foregroundStyle(.white.opacity(0.5))
-                    
-                    Text("\(item.object.points) pts")
-                        .font(.system(size: 12))
-                        .foregroundStyle(.white.opacity(0.7))
+                    // Points
+                    Label("\(item.object.points)", systemImage: "star.fill")
+                        .font(.caption2)
+                        .foregroundStyle(.orange)
                 }
                 
                 Text(item.timestamp, style: .date)
-                    .font(.system(size: 10))
-                    .foregroundStyle(.white.opacity(0.6))
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
             }
-            .padding(.horizontal, 4)
         }
-        .padding()
+        .padding(12)
         .background(
-            RoundedRectangle(cornerRadius: 15)
-                .fill(Color.white.opacity(0.1))
-                .background(
-                    RoundedRectangle(cornerRadius: 15)
-                        .fill(.ultraThinMaterial)
+            RoundedRectangle(cornerRadius: 16)
+                .fill(.ultraThinMaterial)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16)
+                        .fill(Color("WidgetColor").opacity(0.5))
                 )
         )
+        .shadow(color: .black.opacity(0.05), radius: 8, y: 4)
     }
 }
 
@@ -138,4 +155,3 @@ struct GalleryItemCard: View {
         // Fallback on earlier versions
     }
 }
-
