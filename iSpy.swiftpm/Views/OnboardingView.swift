@@ -249,8 +249,6 @@ struct ObjectsSlide: View {
                 navigateToGame = true
             } label: {
                 HStack(spacing: 10) {
-                    Image(systemName: "flag.checkered")
-                        .font(.headline)
                     Text("Start Adventure")
                         .font(.headline)
                         .fontWeight(.semibold)
@@ -265,7 +263,7 @@ struct ObjectsSlide: View {
                         endPoint: .trailing
                     )
                 )
-                .clipShape(RoundedRectangle(cornerRadius: 16))
+                .clipShape(Capsule())
                 .shadow(color: .purple.opacity(0.3), radius: 10, y: 5)
             }
             .padding(.horizontal, 24)

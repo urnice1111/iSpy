@@ -65,18 +65,15 @@ struct GameView: View {
                             
                             .font(.system(size: 30))
                             .foregroundStyle(.white)
-//                            .background(Color.black.opacity(0.3))
                             .clipShape(Circle())
-                            .font(.system(size: 20, weight: .bold)) // Slightly smaller font feels more "premium"
+                            .font(.system(size: 20, weight: .bold))
                                     .foregroundStyle(.white.opacity(0.8))
-                                    .padding(12) // Give the icon some breathing room
+                                    .padding(12)
                                     .background {
                                         Circle()
-                                            .fill(.ultraThinMaterial) // The core glass effect
-//                                            .environment(\.colorScheme, .dark) // Forces a dark glass look
+                                            .fill(.ultraThinMaterial)
                                     }
                                     .overlay {
-                                        // This creates the "edge" of the glass
                                         Circle()
                                             .stroke(.white.opacity(0.2), lineWidth: 0.5)
                                     }
@@ -165,15 +162,9 @@ struct GameView: View {
                     }
                 }
                 .padding()
-//                .background(
-//                    LinearGradient(
-//                        colors: [Color.clear, Color.black.opacity(0.6)],
-//                        startPoint: .top,
-//                        endPoint: .bottom
-//                    )
-//                )
             }
         }
+        .aiProcessingOverlay(isProcessing: isProcessingPhoto, message: "Analyzing photo")
         .onAppear {
             setupCamera()
             startTimer()
@@ -289,6 +280,10 @@ struct GameView: View {
         // Set processing state immediately on main thread
         isProcessingPhoto = true
         
+        // Capture start time for minimum animation duration
+        let startTime = Date()
+        let minimumProcessingDuration: TimeInterval = 2.5 // Show animation for at least 2.5 seconds
+        
         // Prepare image for CoreML (quick operation, can stay on main thread)
         let preparedImage = cameraService.prepareForCoreML() ?? image
         
@@ -311,8 +306,12 @@ struct GameView: View {
                 }
             }
             
-            // Update UI back on main thread
-            DispatchQueue.main.async { [self] in
+            // Calculate how long we need to wait to meet minimum duration
+            let elapsed = Date().timeIntervalSince(startTime)
+            let remainingDelay = max(0, minimumProcessingDuration - elapsed)
+            
+            // Wait for minimum duration before showing results
+            DispatchQueue.main.asyncAfter(deadline: .now() + remainingDelay) { [self] in
                 if let object = foundObject {
                     // Object found!
                     let imageData = image.jpegData(compressionQuality: 0.8)
@@ -444,10 +443,3 @@ struct ObjectStatusCard: View {
     }
 }
 
-#Preview {
-    if #available(iOS 17.0, *) {
-        GameView(gameState: GameState(), popToRoot: .constant(false))
-    } else {
-        // Fallback on earlier versions
-    }
-}
