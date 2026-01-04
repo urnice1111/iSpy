@@ -32,46 +32,32 @@ struct GameObject: Identifiable, Codable, Hashable {
 // Static database of objects - ready for JSON migration later
 struct ObjectDatabase {
     static let allObjects: [GameObject] = [
-        // Easy objects
-        GameObject(name: "Speed Sign", category: "Road", difficulty: .easy),
+        // EASY
         GameObject(name: "Car", category: "Vehicle", difficulty: .easy),
-        GameObject(name: "Traffic Sign", category: "Nature", difficulty: .easy),
-//        GameObject(name: "Building", category: "Urban", difficulty: .easy),
-//        GameObject(name: "Cloud", category: "Sky", difficulty: .easy),
-//        GameObject(name: "Street Light", category: "Road", difficulty: .easy),
-//        GameObject(name: "Road", category: "Road", difficulty: .easy),
-//        GameObject(name: "Grass", category: "Nature", difficulty: .easy),
-//        GameObject(name: "Bridge", category: "Infrastructure", difficulty: .easy),
+        GameObject(name: "Truck", category: "Vehicle", difficulty: .easy),
+        GameObject(name: "Bus", category: "Vehicle", difficulty: .easy),
+        GameObject(name: "Motorcycle", category: "Vehicle", difficulty: .easy),
+        GameObject(name: "Bicycle", category: "Vehicle", difficulty: .easy),
+        GameObject(name: "Traffic Light", category: "Road", difficulty: .easy), //listo
+        GameObject(name: "Stop Sign / Traffic Sign", category: "Road", difficulty: .easy),
         
-        // Medium objects
-        GameObject(name: "Mountain", category: "Nature", difficulty: .medium),
-        GameObject(name: "Lake", category: "Water", difficulty: .medium),
+        // MEDIUM
+        GameObject(name: "Bridge", category: "Infrastructure", difficulty: .medium),
         GameObject(name: "Tunnel", category: "Infrastructure", difficulty: .medium),
-        GameObject(name: "Restaurant", category: "Urban", difficulty: .medium),
-        GameObject(name: "Gas Station", category: "Road", difficulty: .medium),
-        GameObject(name: "Truck", category: "Vehicle", difficulty: .medium),
-        GameObject(name: "Boat", category: "Vehicle", difficulty: .medium),
-        GameObject(name: "Windmill", category: "Infrastructure", difficulty: .medium),
-        GameObject(name: "Farm", category: "Rural", difficulty: .medium),
-        GameObject(name: "Monument", category: "Urban", difficulty: .medium),
+        GameObject(name: "Street Light", category: "Road", difficulty: .medium),
+        GameObject(name: "Gas Station", category: "Urban", difficulty: .medium),
+        GameObject(name: "Building", category: "Infrastructure", difficulty: .medium), //listo de bdd100k e imagnes del data set de mierda
         
-        // Hard objects
-        GameObject(name: "Wildlife", category: "Nature", difficulty: .hard),
-        GameObject(name: "Historic Marker", category: "Urban", difficulty: .hard),
-        GameObject(name: "Scenic Overlook", category: "Nature", difficulty: .hard),
-        GameObject(name: "Vintage Car", category: "Vehicle", difficulty: .hard),
-        GameObject(name: "Lighthouse", category: "Infrastructure", difficulty: .hard),
-        GameObject(name: "Canyon", category: "Nature", difficulty: .hard),
-        GameObject(name: "Waterfall", category: "Nature", difficulty: .hard),
-        GameObject(name: "Desert", category: "Landscape", difficulty: .hard),
-        GameObject(name: "Castle", category: "Urban", difficulty: .hard),
-        GameObject(name: "Cave", category: "Nature", difficulty: .hard),
+        // HARD
+
+        GameObject(name: "Monument / Statue", category: "Urban", difficulty: .hard),
+        GameObject(name: "Wild Animal (Deer/Horse/Cow)", category: "Nature", difficulty: .hard),
     ]
     
     static func getRandomObjects(easy: Int = 3, medium: Int = 2, hard: Int = 1) -> [GameObject] {
         let easyObjects = allObjects.filter { $0.difficulty == .easy }.shuffled().prefix(easy)
-//        let mediumObjects = allObjects.filter { $0.difficulty == .medium }.shuffled().prefix(medium)
-//        let hardObjects = allObjects.filter { $0.difficulty == .hard }.shuffled().prefix(hard)
+        //        let mediumObjects = allObjects.filter { $0.difficulty == .medium }.shuffled().prefix(medium)
+        //        let hardObjects = allObjects.filter { $0.difficulty == .hard }.shuffled().prefix(hard)
         
         return Array(easyObjects)  /*Array(mediumObjects) + Array(hardObjects)*/
     }

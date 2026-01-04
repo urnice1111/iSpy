@@ -10,6 +10,54 @@ final class CameraService: NSObject, ObservableObject, @unchecked Sendable {
     @Published var isTaken = false
     @Published var capturedImage: UIImage?
     
+    private var videoDevice: AVCaptureDevice?  // camera device for zoom
+    
+    // Zoom bounds and state
+    var minZoomFactor: CGFloat { 1.0 }
+    var maxZoomFactor: CGFloat {
+        guard let device = videoDevice else { return 1.0 }
+        // Clamp to a reasonable upper bound to avoid excessive digital zoom
+        return min(5.0, device.activeFormat.videoMaxZoomFactor)
+    }
+    
+    var currentZoomFactor: CGFloat {
+        videoDevice?.videoZoomFactor ?? 1.0
+    }
+    
+    // Set zoom synchronously (no ramp) on the session queue
+    func setZoom(factor: CGFloat) {
+        sessionQueue.async { [weak self] in
+            guard let self = self, let device = self.videoDevice else { return }
+            let clamped = max(self.minZoomFactor, min(factor, self.maxZoomFactor))
+            do {
+                try device.lockForConfiguration()
+                device.videoZoomFactor = clamped
+                device.unlockForConfiguration()
+            } catch {
+                print("Failed to set zoom: \(error)")
+            }
+        }
+    }
+    
+    // Smoothly ramp to a zoom factor
+    func rampZoom(to factor: CGFloat, withRate rate: Float = 4.0) {
+        sessionQueue.async { [weak self] in
+            guard let self = self, let device = self.videoDevice else { return }
+            let clamped = max(self.minZoomFactor, min(factor, self.maxZoomFactor))
+            do {
+                try device.lockForConfiguration()
+                device.ramp(toVideoZoomFactor: clamped, withRate: rate)
+                device.unlockForConfiguration()
+            } catch {
+                print("Failed to ramp zoom: \(error)")
+            }
+        }
+    }
+    
+    func resetZoom() {
+        setZoom(factor: 1.0)
+    }
+    
     private var isSessionRunning = false
     private var isConfigured = false
     private let sessionQueue = DispatchQueue(label: "camera.session.queue")
@@ -46,6 +94,8 @@ final class CameraService: NSObject, ObservableObject, @unchecked Sendable {
                     self.session.commitConfiguration()
                     return
                 }
+                
+                self.videoDevice = device
                 
                 let input = try AVCaptureDeviceInput(device: device)
                 

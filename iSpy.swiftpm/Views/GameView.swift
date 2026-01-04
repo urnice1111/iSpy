@@ -16,8 +16,149 @@ struct GameView: View {
     @Environment(\.dismiss) var dismiss
     @Binding var popToRoot: Bool
     
+    @State private var isPinching = false
+    @State private var initialZoomFactor: CGFloat = 1.0
+
     var challenge: GameChallenge? {
         gameState.currentChallenge
+    }
+    
+    private func clampedZoom(_ factor: CGFloat) -> CGFloat {
+        let minZ = cameraService.minZoomFactor
+        let maxZ = cameraService.maxZoomFactor
+        return min(max(factor, minZ), maxZ)
+    }
+    
+    @ViewBuilder
+    private func headerView() -> some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Time Remaining")
+                    .font(.caption)
+                    .foregroundStyle(.white.opacity(0.8))
+                Text(timeString(from: timeRemaining))
+                    .font(.system(size: 28, weight: .bold))
+                    .foregroundStyle(.white)
+            }
+            
+            Button {
+                showingEndGameAlert = true
+            } label : {
+                Text("End")
+                    .foregroundStyle(Color.red)
+            }
+            
+            Spacer()
+            
+            Button {
+                popToRoot = false
+            } label: {
+                closeButtonLabel()
+            }
+        }
+        .padding()
+        .background(
+            LinearGradient(
+                colors: [Color.black.opacity(0.6), Color.clear],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+        )
+    }
+    
+    @ViewBuilder
+    private func objectsListView() -> some View {
+        if let challenge = challenge {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 12) {
+                    ForEach(challenge.objectsToFind) { object in
+                        ObjectStatusCard(
+                            object: object,
+                            isFound: challenge.isObjectFound(object)
+                        )
+                    }
+                }
+                .padding(.horizontal)
+            }
+            .padding(.bottom, 20)
+        }
+    }
+    
+    @ViewBuilder
+    private func captureControlsView() -> some View {
+        VStack(spacing: 15) {
+            if cameraService.isTaken {
+                HStack(spacing: 20) {
+                    Button {
+                        cameraService.reTake()
+                    } label: {
+                        Text("Retake")
+                            .font(.title3)
+                            .bold()
+                            .foregroundStyle(.white)
+                            .frame(width: 120, height: 50)
+                            .background(Color.gray.opacity(0.7))
+                            .clipShape(Capsule())
+                    }
+                    
+                    Button {
+                        processPhoto()
+                    } label: {
+                        HStack(spacing: 8) {
+                            if isProcessingPhoto {
+                                ProgressView()
+                                    .tint(.white)
+                            }
+                            Text(isProcessingPhoto ? "Analyzing..." : "Check Object")
+                        }
+                        .font(.title3)
+                        .bold()
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 50)
+                        .background(isProcessingPhoto ? Color.blue.opacity(0.6) : Color.blue)
+                        .clipShape(Capsule())
+                    }
+                    .disabled(isProcessingPhoto)
+                }
+                .padding(.horizontal)
+            } else {
+                Button {
+                    cameraService.takePicture()
+                } label: {
+                    ZStack {
+                        Circle()
+                            .fill(Color.white)
+                            .frame(width: 70, height: 70)
+                        
+                        Circle()
+                            .stroke(Color.white, lineWidth: 3)
+                            .frame(width: 80, height: 80)
+                    }
+                }
+                .padding(.bottom, 30)
+            }
+        }
+    }
+    
+    @ViewBuilder
+    private func closeButtonLabel() -> some View {
+        Image(systemName: "xmark")
+            .font(.system(size: 30))
+            .foregroundStyle(.white)
+            .clipShape(Circle())
+            .font(.system(size: 20, weight: .bold))
+            .foregroundStyle(.white.opacity(0.8))
+            .padding(12)
+            .background {
+                Circle()
+                    .fill(.ultraThinMaterial)
+            }
+            .overlay {
+                Circle()
+                    .stroke(.white.opacity(0.2), lineWidth: 0.5)
+            }
+            .shadow(color: .black.opacity(0.1), radius: 10, x: 0, y: 5)
     }
     
     var body: some View {
@@ -31,136 +172,46 @@ struct GameView: View {
                         .ignoresSafeArea()
                 }
             } else {
-                // Camera preview
+                // Camera preview with gestures
                 CameraPreview(camera: cameraService)
                     .ignoresSafeArea()
+                    .gesture(
+                        MagnificationGesture()
+                            .onChanged { value in
+                                if !isPinching {
+                                    isPinching = true
+                                    initialZoomFactor = cameraService.currentZoomFactor
+                                }
+                                let newFactor = clampedZoom(initialZoomFactor * value)
+                                cameraService.setZoom(factor: newFactor)
+                            }
+                            .onEnded { _ in
+                                isPinching = false
+                            }
+                    )
+                    .simultaneousGesture(
+                        TapGesture(count: 2).onEnded {
+                            let step: CGFloat = 0.5
+                            let current = cameraService.currentZoomFactor
+                            let maxZ = cameraService.maxZoomFactor
+                            let minZ = cameraService.minZoomFactor
+                            let nearMax = abs(current - maxZ) < 0.01
+                            let newFactor = nearMax ? minZ : min(current + step, maxZ)
+                            cameraService.setZoom(factor: newFactor)
+                        }
+                    )
             }
             
             // Overlay UI
             VStack {
-                // Timer and header
-                HStack {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Time Remaining")
-                            .font(.caption)
-                            .foregroundStyle(.white.opacity(0.8))
-                        Text(timeString(from: timeRemaining))
-                            .font(.system(size: 28, weight: .bold))
-                            .foregroundStyle(.white)
-                    }
-                    
-                    Button {
-                        showingEndGameAlert = true
-                    } label : {
-                        Text("End")
-                            .foregroundStyle(Color.red)
-                    }
-                    
-                    Spacer()
-                    
-                    Button {
-                        popToRoot = false
-                    } label: {
-                        Image(systemName: "xmark")
-                            
-                            .font(.system(size: 30))
-                            .foregroundStyle(.white)
-                            .clipShape(Circle())
-                            .font(.system(size: 20, weight: .bold))
-                                    .foregroundStyle(.white.opacity(0.8))
-                                    .padding(12)
-                                    .background {
-                                        Circle()
-                                            .fill(.ultraThinMaterial)
-                                    }
-                                    .overlay {
-                                        Circle()
-                                            .stroke(.white.opacity(0.2), lineWidth: 0.5)
-                                    }
-                                    .shadow(color: .black.opacity(0.1), radius: 10, x: 0, y: 5)
-                    }
-                }
-                .padding()
-                .background(
-                    LinearGradient(
-                        colors: [Color.black.opacity(0.6), Color.clear],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                )
+                headerView()
                 
                 Spacer()
                 
-                // Objects list
-                if let challenge = challenge {
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 12) {
-                            ForEach(challenge.objectsToFind) { object in
-                                ObjectStatusCard(
-                                    object: object,
-                                    isFound: challenge.isObjectFound(object)
-                                )
-                            }
-                        }
-                        .padding(.horizontal)
-                    }
-                    .padding(.bottom, 20)
-                }
+                objectsListView()
                 
-                // Capture button area
-                VStack(spacing: 15) {
-                    if cameraService.isTaken {
-                        HStack(spacing: 20) {
-                            Button {
-                                cameraService.reTake()
-                            } label: {
-                                Text("Retake")
-                                    .font(.title3)
-                                    .bold()
-                                    .foregroundStyle(.white)
-                                    .frame(width: 120, height: 50)
-                                    .background(Color.gray.opacity(0.7))
-                                    .clipShape(Capsule())
-                            }
-                            
-                            Button {
-                                processPhoto()
-                            } label: {
-                                HStack(spacing: 8) {
-                                    if isProcessingPhoto {
-                                        ProgressView()
-                                            .tint(.white)
-                                    }
-                                    Text(isProcessingPhoto ? "Analyzing..." : "Check Object")
-                                }
-                                .font(.title3)
-                                .bold()
-                                .foregroundStyle(.white)
-                                .frame(maxWidth: .infinity)
-                                .frame(height: 50)
-                                .background(isProcessingPhoto ? Color.blue.opacity(0.6) : Color.blue)
-                                .clipShape(Capsule())
-                            }
-                            .disabled(isProcessingPhoto)
-                        }
-                        .padding(.horizontal)
-                    } else {
-                        Button {
-                            cameraService.takePicture()
-                        } label: {
-                            ZStack {
-                                Circle()
-                                    .fill(Color.white)
-                                    .frame(width: 70, height: 70)
-                                
-                                Circle()
-                                    .stroke(Color.white, lineWidth: 3)
-                                    .frame(width: 80, height: 80)
-                            }
-                        }
-                        .padding(.bottom, 30)
-                    }
-                }
+                captureControlsView()
+                
                 .padding()
             }
         }
