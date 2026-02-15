@@ -24,8 +24,7 @@ struct ContentView: View {
                 }
 //                .toolbarBackground(.visible, for: .tabBar)
 //                .toolbarBackground(Color("BackgroundColor").opacity(0.9), for: .tabBar)
-                .toolbarColorScheme(.light, for: .tabBar)
-                .tint(.purple)
+                .tint(.indigo)
             } else {
                 TabView {
                     NavigationStack {
@@ -45,10 +44,9 @@ struct ContentView: View {
                             Label("Profile", systemImage: "person.fill")
                         }
                 }
-                .tint(.purple)
+                .tint(.indigo)
             }
         }
-        .preferredColorScheme(.light)
     }
 }
 

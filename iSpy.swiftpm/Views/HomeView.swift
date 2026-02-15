@@ -7,7 +7,6 @@ struct HomeView: View {
     @State private var showGame = false
     
     var body: some View {
-        NavigationStack{
             ScrollView {
                 VStack(spacing: 0) {
                     
@@ -114,7 +113,7 @@ struct HomeView: View {
                 }
                 
             }
-            .background(Color("BackgroundColor"))
+            .background(Color(.systemGroupedBackground))
             .navigationTitle("Hey, Explorer!")
             .navigationBarTitleDisplayMode(.large)
             .navigationDestination(isPresented: $showOnboarding) {
@@ -123,7 +122,6 @@ struct HomeView: View {
             .navigationDestination(isPresented: $showGame) {
                 GameView(gameState: gameState, popToRoot: $showGame)
             }
-        }
     }
 }
 
@@ -195,26 +193,21 @@ struct PointsWidget: View {
                 
                 VStack{
                     Text("\(score)")
-                        .font(.title)
+                        .font(.system(.title, design: .rounded))
                         .bold()
                     
                     Text("Total Points")
-                        .font(.title3)
-                        .bold()
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
                         .foregroundStyle(Color.secondary)
                 }
             }
             .padding(20)
             .frame(maxWidth: .infinity)
             .background(
-                RoundedRectangle(cornerRadius: 24)
-                    .fill(.ultraThinMaterial)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 24)
-                            .fill(Color("WidgetColor2").opacity(0.5))
-                    )
+                RoundedRectangle(cornerRadius: 20)
+                    .fill(Color(.secondarySystemGroupedBackground))
             )
-            .shadow(color: .black.opacity(0.08), radius: 12, y: 6)
         }
     }
 }
@@ -234,7 +227,7 @@ struct GameWidget: View {
                     .frame(width: 65, height: 70)
                     .shadow(color: .black.opacity(0.1), radius: 8, y: 4)
                     .padding()
-                    .foregroundStyle(.purple)
+                    .foregroundStyle(.indigo)
                 
                 VStack(alignment: .leading, spacing: 6) {
                     Text("CHALLENGE")
@@ -262,46 +255,20 @@ struct GameWidget: View {
             Button {
                 onStartChallenge()
             } label: {
-                
                 Text(isContinuing ? "Continue Game" : "Start Challenge")
-                    .font(.headline)
-                    .fontWeight(.semibold)
-                
-                    .foregroundStyle(.white)
                     .frame(maxWidth: .infinity)
-                    .frame(height: 52)
-                    .background(
-                        Group {
-                            if isContinuing {
-                                LinearGradient(
-                                    colors: [.green, .mint],
-                                    startPoint: .leading,
-                                    endPoint: .trailing
-                                )
-                            } else {
-                                LinearGradient(
-                                    colors: [.purple, .pink],
-                                    startPoint: .leading,
-                                    endPoint: .trailing
-                                )
-                            }
-                        }
-                    )
-                    .clipShape(Capsule())
-                    .shadow(color: isContinuing ? .green.opacity(0.3) : .purple.opacity(0.3), radius: 8, y: 4)
             }
+            .buttonStyle(.borderedProminent)
+            .controlSize(.large)
+            .buttonBorderShape(.capsule)
+            .tint(isContinuing ? .green : .indigo)
         }
         .padding(20)
         .frame(maxWidth: .infinity)
         .background(
-            RoundedRectangle(cornerRadius: 24)
-                .fill(.ultraThinMaterial)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 24)
-                        .fill(Color("WidgetColor").opacity(0.5))
-                )
+            RoundedRectangle(cornerRadius: 20)
+                .fill(Color(.secondarySystemGroupedBackground))
         )
-        .shadow(color: .black.opacity(0.08), radius: 12, y: 6)
     }
 }
 
@@ -325,15 +292,15 @@ struct JourneyStatCardHome: View {
                 .foregroundStyle(.primary)
             
             Text(label)
-                .font(.system(size: 18))
-                .bold()
+                .font(.subheadline)
+                .fontWeight(.semibold)
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 16)
         .background(
-            RoundedRectangle(cornerRadius: 24)
-                .fill(Color("WidgetColor"))
+            RoundedRectangle(cornerRadius: 16)
+                .fill(Color(.secondarySystemGroupedBackground))
         )
     }
 }

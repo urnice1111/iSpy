@@ -35,9 +35,8 @@ struct OnboardingView: View {
                     .padding(.bottom, 20)
             }
         }
-        .background(Color("BackgroundColor"))
+        .background(Color(.systemGroupedBackground))
         .navigationBarTitleDisplayMode(.inline)
-        .toolbarColorScheme(.light, for: .navigationBar)
         .toolbar(.hidden, for: .tabBar)
     }
 }
@@ -52,24 +51,12 @@ struct InstructionsSlide: View {
             VStack(spacing: 20) {
                 ZStack {
                     Circle()
-                        .fill(
-                            LinearGradient(
-                                colors: [.purple.opacity(0.2), .pink.opacity(0.2)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
+                        .fill(Color.indigo.opacity(0.15))
                         .frame(width: 120, height: 120)
                     
                     Image(systemName: "camera.viewfinder")
                         .font(.system(size: 50))
-                        .foregroundStyle(
-                            LinearGradient(
-                                colors: [.purple, .pink],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
+                        .foregroundStyle(.indigo)
                 }
                 
                 Text("How to Play")
@@ -104,13 +91,8 @@ struct InstructionsSlide: View {
             .padding(24)
             .background(
                 RoundedRectangle(cornerRadius: 20)
-                    .fill(.ultraThinMaterial)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 20)
-                            .fill(Color("WidgetColor").opacity(0.5))
-                    )
+                    .fill(Color(.secondarySystemGroupedBackground))
             )
-            .shadow(color: .black.opacity(0.08), radius: 12, y: 6)
             .padding(.horizontal, 24)
             
             Spacer()
@@ -178,16 +160,10 @@ struct InstructionRow: View {
     
     var body: some View {
         HStack(spacing: 16) {
-            // Number badge with gradient
+            // Number badge
             ZStack {
                 Circle()
-                    .fill(
-                        LinearGradient(
-                            colors: [.purple, .pink],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
+                    .fill(Color.indigo)
                     .frame(width: 36, height: 36)
                 
                 Text("\(number)")
@@ -243,29 +219,18 @@ struct ObjectsSlide: View {
                 .padding(.horizontal, 24)
             }
             
-            // Start button with gradient
+            // Start button
             Button {
                 gameState.startChallenge(objects: objects)
                 navigateToGame = true
             } label: {
-                HStack(spacing: 10) {
-                    Text("Start Adventure")
-                        .font(.headline)
-                        .fontWeight(.semibold)
-                }
-                .foregroundStyle(.white)
-                .frame(maxWidth: .infinity)
-                .frame(height: 56)
-                .background(
-                    LinearGradient(
-                        colors: [.purple, .pink],
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    )
-                )
-                .clipShape(Capsule())
-                .shadow(color: .purple.opacity(0.3), radius: 10, y: 5)
+                Text("Start Adventure")
+                    .frame(maxWidth: .infinity)
             }
+            .buttonStyle(.borderedProminent)
+            .controlSize(.large)
+            .buttonBorderShape(.capsule)
+            .tint(.indigo)
             .padding(.horizontal, 24)
             .padding(.bottom, 80)
             .navigationDestination(isPresented: $navigateToGame) {
@@ -332,13 +297,8 @@ struct ObjectCard: View {
         .padding(16)
         .background(
             RoundedRectangle(cornerRadius: 16)
-                .fill(.ultraThinMaterial)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 16)
-                        .fill(Color("WidgetColor").opacity(0.5))
-                )
+                .fill(Color(.secondarySystemGroupedBackground))
         )
-        .shadow(color: .black.opacity(0.05), radius: 8, y: 4)
     }
 }
 
@@ -351,7 +311,7 @@ struct PageIndicator: View {
         HStack(spacing: 8) {
             ForEach(0..<count, id: \.self) { index in
                 Capsule()
-                    .fill(index == currentIndex ? Color.purple : Color.secondary.opacity(0.3))
+                    .fill(index == currentIndex ? Color.indigo : Color.secondary.opacity(0.3))
                     .frame(width: index == currentIndex ? 24 : 8, height: 8)
                     .animation(.spring(response: 0.3), value: currentIndex)
             }

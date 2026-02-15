@@ -75,35 +75,30 @@ struct ProfileView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .background(
                         RoundedRectangle(cornerRadius: 16)
-                            .fill(.ultraThinMaterial)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 16)
-                                    .fill(Color("WidgetColor").opacity(0.5))
-                            )
+                            .fill(Color(.secondarySystemGroupedBackground))
                     )
                     .padding(.horizontal, 20)
                     
                     Spacer(minLength: 40)
                     
                     // Reset button - Apple destructive style
-                    Button {
+                    Button(role: .destructive) {
                         showingResetGameAlert = true
                     } label: {
                         HStack(spacing: 8) {
                             Image(systemName: "arrow.counterclockwise")
                             Text("Reset Progress")
                         }
-                        .font(.body)
-                        .fontWeight(.medium)
-                        .foregroundStyle(.red)
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 14)
                     }
+                    .buttonStyle(.bordered)
+                    .controlSize(.large)
+                    .tint(.red)
                     .padding(.horizontal, 20)
                     .padding(.bottom, 20)
                 }
             }
-            .background(Color("BackgroundColor"))
+            .background(Color(.systemGroupedBackground))
             .navigationTitle("Profile")
             .navigationBarTitleDisplayMode(.large)
             .scrollContentBackground(.hidden)
@@ -151,13 +146,8 @@ struct StatisticsWidget: View {
         .frame(maxWidth: .infinity)
         .background(
             RoundedRectangle(cornerRadius: 16)
-                .fill(.ultraThinMaterial)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 16)
-                        .fill(Color("WidgetColor").opacity(0.5))
-                )
+                .fill(Color(.secondarySystemGroupedBackground))
         )
-        .shadow(color: .black.opacity(0.08), radius: 12, y: 6)
     }
 }
 
@@ -175,7 +165,8 @@ struct StatItem: View {
                 .foregroundStyle(color)
             
             Text(value)
-                .font(.system(size: 28, weight: .bold, design: .rounded))
+                .font(.system(.title, design: .rounded))
+                .fontWeight(.bold)
                 .foregroundStyle(.primary)
             
             Text(label)
@@ -212,7 +203,7 @@ struct JourneyStatCard: View {
         .padding(.vertical, 16)
         .background(
             RoundedRectangle(cornerRadius: 12)
-                .fill(color.opacity(0.1))
+                .fill(Color(.tertiarySystemGroupedBackground))
         )
     }
 }

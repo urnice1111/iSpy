@@ -39,6 +39,8 @@ struct GalleryView: View {
                         
                         HStack{
                             Text("\(gameState.collectedItems.count) objects found")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
                             Spacer()
                         }
                         .padding(.horizontal, 20)
@@ -65,7 +67,7 @@ struct GalleryView: View {
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(Color("BackgroundColor"))
+            .background(Color(.systemGroupedBackground))
             .navigationTitle("Gallery")
             .navigationBarTitleDisplayMode(.large)
             .scrollContentBackground(.hidden)
@@ -138,13 +140,8 @@ struct GalleryItemCard: View {
         .padding(12)
         .background(
             RoundedRectangle(cornerRadius: 16)
-                .fill(.ultraThinMaterial)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 16)
-                        .fill(Color("WidgetColor").opacity(0.5))
-                )
+                .fill(Color(.secondarySystemGroupedBackground))
         )
-        .shadow(color: .black.opacity(0.05), radius: 8, y: 4)
     }
 }
 

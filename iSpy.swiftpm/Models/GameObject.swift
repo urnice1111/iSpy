@@ -32,26 +32,29 @@ struct GameObject: Identifiable, Codable, Hashable {
 // Static database of objects - ready for JSON migration later
 struct ObjectDatabase {
     static let allObjects: [GameObject] = [
-        // EASY
-        GameObject(name: "Car", category: "Vehicle", difficulty: .easy),
-        GameObject(name: "Truck", category: "Vehicle", difficulty: .easy),
-        GameObject(name: "Bus", category: "Vehicle", difficulty: .easy),
-        GameObject(name: "Motorcycle", category: "Vehicle", difficulty: .easy),
-        GameObject(name: "Bicycle", category: "Vehicle", difficulty: .easy),
-        GameObject(name: "Traffic Light", category: "Road", difficulty: .easy), //listo
-        GameObject(name: "Stop Sign / Traffic Sign", category: "Road", difficulty: .easy),
-        
-        // MEDIUM
-        GameObject(name: "Bridge", category: "Infrastructure", difficulty: .medium),
-        GameObject(name: "Tunnel", category: "Infrastructure", difficulty: .medium),
-        GameObject(name: "Street Light", category: "Road", difficulty: .medium),
-        GameObject(name: "Gas Station", category: "Urban", difficulty: .medium),
-        GameObject(name: "Building", category: "Infrastructure", difficulty: .medium), //listo de bdd100k e imagnes del data set de mierda
-        
-        // HARD
+        // --- EASY (Colores vibrantes y formas únicas) ---
+        GameObject(name: "Traffic Cone", category: "Road", difficulty: .easy), //listo down
+        GameObject(name: "Fire Hydrant", category: "Urban", difficulty: .easy), //listo down
+        GameObject(name: "Bicycle", category: "Vehicle", difficulty: .easy), //listo down
+        GameObject(name: "Bus Stop", category: "Urban", difficulty: .easy), //listo downloaded splitted
+        GameObject(name: "Zebra Crossing", category: "Road", difficulty: .easy), //listo down
+        GameObject(name: "Traffic Light", category: "Road", difficulty: .easy), //listo down splitted
+        GameObject(name: "Stop Sign", category: "Road", difficulty: .easy), //listo down
 
-        GameObject(name: "Monument / Statue", category: "Urban", difficulty: .hard),
-        GameObject(name: "Wild Animal (Deer/Horse/Cow)", category: "Nature", difficulty: .hard),
+        // --- MEDIUM (Requieren más atención al entorno) ---
+        GameObject(name: "Wind Turbine", category: "Energy", difficulty: .medium), //listo down
+        GameObject(name: "Electric Tower", category: "Infrastructure", difficulty: .medium), //listo down
+        GameObject(name: "Road Sign", category: "Road", difficulty: .medium), //listo down
+        GameObject(name: "Construction Crane", category: "Construction", difficulty: .medium), //listo down
+        GameObject(name: "Cow", category: "Nature", difficulty: .medium), //listo down
+        GameObject(name: "Gas Station", category: "Urban", difficulty: .medium), //listo down
+//        GameObject(name: "Bridge", category: "Infrastructure", difficulty: .medium),
+
+        // --- HARD (Objetos en movimiento o menos frecuentes) ---
+        GameObject(name: "Police Car", category: "Emergency", difficulty: .hard), //listo down
+        GameObject(name: "Ambulance", category: "Emergency", difficulty: .hard), //listo
+        GameObject(name: "Tractor", category: "Farm", difficulty: .hard), //listo
+        GameObject(name: "Church", category: "Urban", difficulty: .hard) //listo
     ]
     
     static func getRandomObjects(easy: Int = 3, medium: Int = 2, hard: Int = 1) -> [GameObject] {
