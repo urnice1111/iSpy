@@ -68,7 +68,6 @@ struct AIProcessingOverlay: View {
     let message: String
     
     @State private var dotCount = 0
-    @State private var timer: Timer?
     
     var animatedDots: String {
         String(repeating: ".", count: dotCount)
@@ -164,17 +163,10 @@ struct AIProcessingOverlay: View {
             )
         }
         .ignoresSafeArea()
-        .onAppear {
-            // Animate dots
-            timer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { _ in
-                withAnimation(.easeInOut(duration: 0.2)) {
-                    dotCount = (dotCount + 1) % 4
-                }
+        .onReceive(Timer.publish(every: 0.5, on: .main, in: .common).autoconnect()) { _ in
+            withAnimation(.easeInOut(duration: 0.2)) {
+                dotCount = (dotCount + 1) % 4
             }
-        }
-        .onDisappear {
-            timer?.invalidate()
-            timer = nil
         }
     }
 }

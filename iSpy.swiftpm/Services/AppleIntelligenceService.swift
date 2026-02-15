@@ -106,133 +106,54 @@ class AppleIntelligenceService {
         }
     }
     
-    // MARK: - Chat Session
     
-    /// Start a new chat session with context about the object
-    /// - Parameters:
-    ///   - objectName: The name of the object
-    ///   - description: The AI-generated description (if any)
-    func startChatSession(objectName: String, description: String?) async {
-        guard Self.isAvailable else {
-            errorMessage = "Apple Intelligence is not available on this device"
-            return
-        }
+    // MARK: - Errors
+    enum AppleIntelligenceError: LocalizedError {
+        case notAvailable
+        case noActiveSession
+        case generationFailed(String)
         
-        currentObjectName = objectName
-        currentDescription = description ?? "No description generated yet"
-        chatMessages = []
-        
-        // Create a new session with system context
-        let instructions = """
-        You are a helpful assistant in a road trip discovery game called "iSpy".
-        The user is asking about an object they found: "\(objectName)"
-        
-        Here's what we know about it: \(currentDescription)
-        
-        Be friendly, informative, and keep responses concise (2-4 sentences).
-        If asked about things unrelated to the object, road trips, or exploration, 
-        politely redirect the conversation back to the discovery.
-        """
-        
-        do {
-            session = LanguageModelSession(instructions: instructions)
-        } catch {
-            errorMessage = "Failed to start chat session"
+        var errorDescription: String? {
+            switch self {
+            case .notAvailable:
+                return "Apple Intelligence is not available on this device. Requires iPhone 15 Pro or newer, or M-series iPad."
+            case .noActiveSession:
+                return "No active chat session. Please start a new conversation."
+            case .generationFailed(let reason):
+                return "Failed to generate content: \(reason)"
+            }
         }
     }
     
-    /// Send a message and get a response
-    /// - Parameter message: The user's message
-    /// - Returns: The AI's response
-    @discardableResult
-    func sendMessage(_ message: String) async throws -> String {
-        guard let session = session else {
-            throw AppleIntelligenceError.noActiveSession
-        }
+    // MARK: - Fallback for older iOS versions
+    /// Stub service for devices that don't support Apple Intelligence
+    @available(iOS 26.0, *)
+    @Observable
+    final class AppleIntelligenceServiceUnavailable: @unchecked Sendable {
+        @MainActor static let shared = AppleIntelligenceServiceUnavailable()
         
-        guard Self.isAvailable else {
+        var chatMessages: [ChatMessage] = []
+        var isGenerating: Bool = false
+        var errorMessage: String? = "Apple Intelligence requires iOS 26.0 or later"
+        
+        static var isAvailable: Bool { false }
+        
+        init() {}
+        
+        func generateQuizQuestions(for objectName: String) async throws -> [QuizQuestion] {
             throw AppleIntelligenceError.notAvailable
         }
         
-        isGenerating = true
-        errorMessage = nil
-        
-        // Add user message to chat
-        let userMessage = ChatMessage(content: message, isUser: true)
-        chatMessages.append(userMessage)
-        
-        defer { isGenerating = false }
-        
-        do {
-            let response = try await session.respond(to: message)
-            
-            // Add AI response to chat
-            let aiMessage = ChatMessage(content: response.content, isUser: false)
-            chatMessages.append(aiMessage)
-            
-            return response.content
-        } catch {
-            errorMessage = "Failed to get response: \(error.localizedDescription)"
-            throw error
+        func startChatSession(objectName: String, description: String?) async {
+            errorMessage = "Apple Intelligence is not available"
         }
-    }
-    
-    /// Clear the current chat session
-    func clearChat() {
-        chatMessages = []
-        session = nil
-        currentObjectName = ""
-        currentDescription = ""
-    }
-}
-
-// MARK: - Errors
-enum AppleIntelligenceError: LocalizedError {
-    case notAvailable
-    case noActiveSession
-    case generationFailed(String)
-    
-    var errorDescription: String? {
-        switch self {
-        case .notAvailable:
-            return "Apple Intelligence is not available on this device. Requires iPhone 15 Pro or newer, or M-series iPad."
-        case .noActiveSession:
-            return "No active chat session. Please start a new conversation."
-        case .generationFailed(let reason):
-            return "Failed to generate content: \(reason)"
+        
+        func sendMessage(_ message: String) async throws -> String {
+            throw AppleIntelligenceError.notAvailable
+        }
+        
+        func clearChat() {
+            chatMessages = []
         }
     }
 }
-
-// MARK: - Fallback for older iOS versions
-/// Stub service for devices that don't support Apple Intelligence
-@available(iOS 17.0, *)
-@Observable
-final class AppleIntelligenceServiceUnavailable: @unchecked Sendable {
-    @MainActor static let shared = AppleIntelligenceServiceUnavailable()
-    
-    var chatMessages: [ChatMessage] = []
-    var isGenerating: Bool = false
-    var errorMessage: String? = "Apple Intelligence requires iOS 26.0 or later"
-    
-    static var isAvailable: Bool { false }
-    
-    init() {}
-    
-    func generateQuizQuestions(for objectName: String) async throws -> [QuizQuestion] {
-        throw AppleIntelligenceError.notAvailable
-    }
-    
-    func startChatSession(objectName: String, description: String?) async {
-        errorMessage = "Apple Intelligence is not available"
-    }
-    
-    func sendMessage(_ message: String) async throws -> String {
-        throw AppleIntelligenceError.notAvailable
-    }
-    
-    func clearChat() {
-        chatMessages = []
-    }
-}
-

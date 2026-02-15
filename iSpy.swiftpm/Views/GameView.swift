@@ -274,9 +274,9 @@ struct GameView: View {
             timeRemaining = challenge.remainingTime
         }
         
-        timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak gameState] _ in
-            guard let gameState = gameState,
-                  let challenge = gameState.currentChallenge else {
+        nonisolated(unsafe) let gameState = self.gameState
+        timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
+            guard let challenge = gameState.currentChallenge else {
                 DispatchQueue.main.async {
                     timer?.invalidate()
                     timer = nil
@@ -338,12 +338,9 @@ struct GameView: View {
         // Prepare image for CoreML (quick operation, can stay on main thread)
         let preparedImage = cameraService.prepareForCoreML() ?? image
         
-        // Capture detection service reference for background work
-        let detectionService = self.detectionService
-        
-        // Run ML inference on background thread to keep UI responsive
         DispatchQueue.global(qos: .userInitiated).async {
             // Heavy ML work happens here - OFF the main thread
+            let detectionService = ObjectDetectionService()
             let detectedObjects = detectionService.detectObjects(in: preparedImage)
             
             // Check if any of the detected objects match objects we're looking for

@@ -24,28 +24,28 @@ class ObjectDetectionService {
     /// Setup the CoreML model asynchronously to avoid UI freezing
     @available(iOS 17.0, *)
     private func setupModelAsync() {
-        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+        nonisolated(unsafe) let weakSelf = self
+        DispatchQueue.global(qos: .userInitiated).async {
             let config = MLModelConfiguration()
             config.computeUnits = .cpuAndGPU
 
             do {
-                // IMPORTANT: First rename your model file to remove the space:
-                // "MultiLabelModelISpy 1.mlmodel" → "MultiLabelModelISpy.mlmodel"
-                // Then the class name will be "MultiLabelModelISpy"
+                
+                // Change the name for the model in later iterations until the final model is done. This is a reminder for you, Emiliano.
                 let coreMLModel = try MultiLabelModelISpy(configuration: config)
                 let model = coreMLModel.model
                 let visionModel = try VNCoreMLModel(for: model)
                 
                 DispatchQueue.main.async {
-                    self?.visionModel = visionModel
-                    self?.isModelReady = true
-                    print("✅ CoreML model loaded successfully!")
+                    weakSelf.visionModel = visionModel
+                    weakSelf.isModelReady = true
+                    print("CoreML model loaded successfully!")
                 }
             } catch {
                 print("❌ Failed to load CoreML model: \(error)")
                 DispatchQueue.main.async {
-                    self?.visionModel = nil
-                    self?.isModelReady = false
+                    weakSelf.visionModel = nil
+                    weakSelf.isModelReady = false
                 }
             }
         }
