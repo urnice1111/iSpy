@@ -34,10 +34,10 @@ struct ObjectDatabase {
     static let allObjects: [GameObject] = [
         // --- EASY (Colores vibrantes y formas únicas) ---
         GameObject(name: "Traffic Cone", category: "Road", difficulty: .easy), //listo down
-        GameObject(name: "Fire Hydrant", category: "Urban", difficulty: .easy), //listo down
-        GameObject(name: "Bicycle", category: "Vehicle", difficulty: .easy), //listo down
-        GameObject(name: "Bus Stop", category: "Urban", difficulty: .easy), //listo downloaded splitted
-        GameObject(name: "Zebra Crossing", category: "Road", difficulty: .easy), //listo down
+//        GameObject(name: "Fire Hydrant", category: "Urban", difficulty: .easy), //listo down
+//        GameObject(name: "Bicycle", category: "Vehicle", difficulty: .easy), //listo down
+//        GameObject(name: "Bus Stop", category: "Urban", difficulty: .easy), //listo downloaded splitted
+//        GameObject(name: "Zebra Crossing", category: "Road", difficulty: .easy), //listo down
         GameObject(name: "Traffic Light", category: "Road", difficulty: .easy), //listo down splitted
         GameObject(name: "Stop Sign", category: "Road", difficulty: .easy), //listo down
 

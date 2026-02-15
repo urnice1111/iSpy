@@ -303,6 +303,8 @@ struct ObjectCard: View {
 }
 
 // MARK: - Page Indicator
+// This is for the little swipte to right text on the bottom of the onboarding view before
+// starting a new game.
 struct PageIndicator: View {
     let count: Int
     let currentIndex: Int

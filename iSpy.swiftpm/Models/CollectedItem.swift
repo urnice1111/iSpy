@@ -40,15 +40,17 @@ struct CollectedItem: Identifiable, Codable {
     let imagePath: String?  // Store path instead of data
     let timestamp: Date
     let challengeId: UUID
-    var aiDescription: String?  // AI-generated description (cached)
+    var aiDescription: String?  // AI-generated description (cached, deprecated)
+    var quizBonusPoints: Int?  // Bonus points from quiz (nil = not completed)
     
-    init(id: UUID = UUID(), object: GameObject, imagePath: String?, timestamp: Date = Date(), challengeId: UUID, aiDescription: String? = nil) {
+    init(id: UUID = UUID(), object: GameObject, imagePath: String?, timestamp: Date = Date(), challengeId: UUID, aiDescription: String? = nil, quizBonusPoints: Int? = nil) {
         self.id = id
         self.object = object
         self.imagePath = imagePath
         self.timestamp = timestamp
         self.challengeId = challengeId
         self.aiDescription = aiDescription
+        self.quizBonusPoints = quizBonusPoints
     }
     
     var image: Image? {

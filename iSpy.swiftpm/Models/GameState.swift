@@ -133,5 +133,28 @@ class GameState {
             saveState()
         }
     }
+    
+    /// Add quiz bonus points for a collected item (one-time per item)
+    /// - Parameters:
+    ///   - itemId: The UUID of the item
+    ///   - bonusPoints: Points to add (5 per correct answer, max 15)
+    func addQuizBonusPoints(itemId: UUID, bonusPoints: Int) {
+        guard let index = collectedItems.firstIndex(where: { $0.id == itemId }) else { return }
+        guard collectedItems[index].quizBonusPoints == nil else { return }
+        
+        collectedItems[index].quizBonusPoints = bonusPoints
+        totalScore += bonusPoints
+        saveState()
+    }
+    
+    /// Reset quiz for a collected item (debug only) - subtracts previous bonus and clears quiz state
+    func resetQuiz(itemId: UUID) {
+        guard let index = collectedItems.firstIndex(where: { $0.id == itemId }) else { return }
+        if let previousBonus = collectedItems[index].quizBonusPoints {
+            totalScore = max(0, totalScore - previousBonus)
+        }
+        collectedItems[index].quizBonusPoints = nil
+        saveState()
+    }
 }
 

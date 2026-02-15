@@ -163,6 +163,7 @@ struct AIProcessingOverlay: View {
                     )
             )
         }
+        .ignoresSafeArea()
         .onAppear {
             // Animate dots
             timer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { _ in
