@@ -1,8 +1,8 @@
 //
-// MultiLabelModelISpy.swift
+// MultiLabelModel.swift
 //
 // This file was automatically generated and should not be edited.
-// This file works for object detection service, and was obtained by creating a temporal app (No playground).
+//
 
 import CoreML
 
@@ -10,7 +10,7 @@ import CoreML
 /// Model Prediction Input Type
 @available(macOS 14.0, iOS 17.0, tvOS 17.0, visionOS 1.0, *)
 @available(watchOS, unavailable)
-class MultiLabelModelISpyInput : MLFeatureProvider {
+class MultiLabelModelInput : MLFeatureProvider {
 
     /// image as color (kCVPixelFormatType_32BGRA) image buffer, 360 pixels wide by 360 pixels high
     var image: CVPixelBuffer
@@ -50,7 +50,7 @@ class MultiLabelModelISpyInput : MLFeatureProvider {
 /// Model Prediction Output Type
 @available(macOS 14.0, iOS 17.0, tvOS 17.0, visionOS 1.0, *)
 @available(watchOS, unavailable)
-class MultiLabelModelISpyOutput : MLFeatureProvider {
+class MultiLabelModelOutput : MLFeatureProvider {
 
     /// Source provided by CoreML
     private let provider : MLFeatureProvider
@@ -81,20 +81,20 @@ class MultiLabelModelISpyOutput : MLFeatureProvider {
 /// Class for model loading and prediction
 @available(macOS 14.0, iOS 17.0, tvOS 17.0, visionOS 1.0, *)
 @available(watchOS, unavailable)
-class MultiLabelModelISpy {
+class MultiLabelModel {
     let model: MLModel
 
     /// URL of model assuming it was installed in the same bundle as this class
     class var urlOfModelInThisBundle : URL {
         let bundle = Bundle(for: self)
-        return bundle.url(forResource: "MultiLabelModelISpy", withExtension:"mlmodelc")!
+        return bundle.url(forResource: "MultiLabelModel", withExtension:"mlmodelc")!
     }
 
     /**
-        Construct MultiLabelModelISpy instance with an existing MLModel object.
+        Construct MultiLabelModel instance with an existing MLModel object.
 
-        Usually the application does not use this initializer unless it makes a subclass of MultiLabelModelISpy.
-        Such application may want to use `MLModel(contentsOfURL:configuration:)` and `MultiLabelModelISpy.urlOfModelInThisBundle` to create a MLModel object to pass-in.
+        Usually the application does not use this initializer unless it makes a subclass of MultiLabelModel.
+        Such application may want to use `MLModel(contentsOfURL:configuration:)` and `MultiLabelModel.urlOfModelInThisBundle` to create a MLModel object to pass-in.
 
         - parameters:
           - model: MLModel object
@@ -116,7 +116,7 @@ class MultiLabelModelISpy {
     }
 
     /**
-        Construct MultiLabelModelISpy instance with explicit path to mlmodelc file
+        Construct MultiLabelModel instance with explicit path to mlmodelc file
         - parameters:
            - modelURL: the file url of the model
 
@@ -140,7 +140,7 @@ class MultiLabelModelISpy {
     }
 
     /**
-        Construct MultiLabelModelISpy instance asynchronously with optional configuration.
+        Construct MultiLabelModel instance asynchronously with optional configuration.
 
         Model loading may take time when the model content is not immediately available (e.g. encrypted model). Use this factory method especially when the caller is on the main thread.
 
@@ -148,24 +148,24 @@ class MultiLabelModelISpy {
           - configuration: the desired model configuration
           - handler: the completion handler to be called when the model loading completes successfully or unsuccessfully
     */
-    class func load(configuration: MLModelConfiguration = MLModelConfiguration(), completionHandler handler: @escaping (Swift.Result<MultiLabelModelISpy, Error>) -> Void) {
+    class func load(configuration: MLModelConfiguration = MLModelConfiguration(), completionHandler handler: @escaping (Swift.Result<MultiLabelModel, Error>) -> Void) {
         load(contentsOf: self.urlOfModelInThisBundle, configuration: configuration, completionHandler: handler)
     }
 
     /**
-        Construct MultiLabelModelISpy instance asynchronously with optional configuration.
+        Construct MultiLabelModel instance asynchronously with optional configuration.
 
         Model loading may take time when the model content is not immediately available (e.g. encrypted model). Use this factory method especially when the caller is on the main thread.
 
         - parameters:
           - configuration: the desired model configuration
     */
-    class func load(configuration: MLModelConfiguration = MLModelConfiguration()) async throws -> MultiLabelModelISpy {
+    class func load(configuration: MLModelConfiguration = MLModelConfiguration()) async throws -> MultiLabelModel {
         try await load(contentsOf: self.urlOfModelInThisBundle, configuration: configuration)
     }
 
     /**
-        Construct MultiLabelModelISpy instance asynchronously with URL of the .mlmodelc directory with optional configuration.
+        Construct MultiLabelModel instance asynchronously with URL of the .mlmodelc directory with optional configuration.
 
         Model loading may take time when the model content is not immediately available (e.g. encrypted model). Use this factory method especially when the caller is on the main thread.
 
@@ -174,19 +174,19 @@ class MultiLabelModelISpy {
           - configuration: the desired model configuration
           - handler: the completion handler to be called when the model loading completes successfully or unsuccessfully
     */
-    class func load(contentsOf modelURL: URL, configuration: MLModelConfiguration = MLModelConfiguration(), completionHandler handler: @escaping (Swift.Result<MultiLabelModelISpy, Error>) -> Void) {
+    class func load(contentsOf modelURL: URL, configuration: MLModelConfiguration = MLModelConfiguration(), completionHandler handler: @escaping (Swift.Result<MultiLabelModel, Error>) -> Void) {
         MLModel.load(contentsOf: modelURL, configuration: configuration) { result in
             switch result {
             case .failure(let error):
                 handler(.failure(error))
             case .success(let model):
-                handler(.success(MultiLabelModelISpy(model: model)))
+                handler(.success(MultiLabelModel(model: model)))
             }
         }
     }
 
     /**
-        Construct MultiLabelModelISpy instance asynchronously with URL of the .mlmodelc directory with optional configuration.
+        Construct MultiLabelModel instance asynchronously with URL of the .mlmodelc directory with optional configuration.
 
         Model loading may take time when the model content is not immediately available (e.g. encrypted model). Use this factory method especially when the caller is on the main thread.
 
@@ -194,9 +194,9 @@ class MultiLabelModelISpy {
           - modelURL: the URL to the model
           - configuration: the desired model configuration
     */
-    class func load(contentsOf modelURL: URL, configuration: MLModelConfiguration = MLModelConfiguration()) async throws -> MultiLabelModelISpy {
+    class func load(contentsOf modelURL: URL, configuration: MLModelConfiguration = MLModelConfiguration()) async throws -> MultiLabelModel {
         let model = try await MLModel.load(contentsOf: modelURL, configuration: configuration)
-        return MultiLabelModelISpy(model: model)
+        return MultiLabelModel(model: model)
     }
 
     /**
@@ -205,13 +205,13 @@ class MultiLabelModelISpy {
         It uses the default function if the model has multiple functions.
 
         - parameters:
-           - input: the input to the prediction as MultiLabelModelISpyInput
+           - input: the input to the prediction as MultiLabelModelInput
 
         - throws: an NSError object that describes the problem
 
-        - returns: the result of the prediction as MultiLabelModelISpyOutput
+        - returns: the result of the prediction as MultiLabelModelOutput
     */
-    func prediction(input: MultiLabelModelISpyInput) throws -> MultiLabelModelISpyOutput {
+    func prediction(input: MultiLabelModelInput) throws -> MultiLabelModelOutput {
         try prediction(input: input, options: MLPredictionOptions())
     }
 
@@ -221,16 +221,16 @@ class MultiLabelModelISpy {
         It uses the default function if the model has multiple functions.
 
         - parameters:
-           - input: the input to the prediction as MultiLabelModelISpyInput
+           - input: the input to the prediction as MultiLabelModelInput
            - options: prediction options
 
         - throws: an NSError object that describes the problem
 
-        - returns: the result of the prediction as MultiLabelModelISpyOutput
+        - returns: the result of the prediction as MultiLabelModelOutput
     */
-    func prediction(input: MultiLabelModelISpyInput, options: MLPredictionOptions) throws -> MultiLabelModelISpyOutput {
+    func prediction(input: MultiLabelModelInput, options: MLPredictionOptions) throws -> MultiLabelModelOutput {
         let outFeatures = try model.prediction(from: input, options: options)
-        return MultiLabelModelISpyOutput(features: outFeatures)
+        return MultiLabelModelOutput(features: outFeatures)
     }
 
     /**
@@ -239,16 +239,16 @@ class MultiLabelModelISpy {
         It uses the default function if the model has multiple functions.
 
         - parameters:
-           - input: the input to the prediction as MultiLabelModelISpyInput
+           - input: the input to the prediction as MultiLabelModelInput
            - options: prediction options
 
         - throws: an NSError object that describes the problem
 
-        - returns: the result of the prediction as MultiLabelModelISpyOutput
+        - returns: the result of the prediction as MultiLabelModelOutput
     */
-    func prediction(input: MultiLabelModelISpyInput, options: MLPredictionOptions = MLPredictionOptions()) async throws -> MultiLabelModelISpyOutput {
+    func prediction(input: MultiLabelModelInput, options: MLPredictionOptions = MLPredictionOptions()) async throws -> MultiLabelModelOutput {
         let outFeatures = try await model.prediction(from: input, options: options)
-        return MultiLabelModelISpyOutput(features: outFeatures)
+        return MultiLabelModelOutput(features: outFeatures)
     }
 
     /**
@@ -261,10 +261,10 @@ class MultiLabelModelISpy {
 
         - throws: an NSError object that describes the problem
 
-        - returns: the result of the prediction as MultiLabelModelISpyOutput
+        - returns: the result of the prediction as MultiLabelModelOutput
     */
-    func prediction(image: CVPixelBuffer) throws -> MultiLabelModelISpyOutput {
-        let input_ = MultiLabelModelISpyInput(image: image)
+    func prediction(image: CVPixelBuffer) throws -> MultiLabelModelOutput {
+        let input_ = MultiLabelModelInput(image: image)
         return try prediction(input: input_)
     }
 
@@ -274,21 +274,21 @@ class MultiLabelModelISpy {
         It uses the default function if the model has multiple functions.
 
         - parameters:
-           - inputs: the inputs to the prediction as [MultiLabelModelISpyInput]
+           - inputs: the inputs to the prediction as [MultiLabelModelInput]
            - options: prediction options
 
         - throws: an NSError object that describes the problem
 
-        - returns: the result of the prediction as [MultiLabelModelISpyOutput]
+        - returns: the result of the prediction as [MultiLabelModelOutput]
     */
-    func predictions(inputs: [MultiLabelModelISpyInput], options: MLPredictionOptions = MLPredictionOptions()) throws -> [MultiLabelModelISpyOutput] {
+    func predictions(inputs: [MultiLabelModelInput], options: MLPredictionOptions = MLPredictionOptions()) throws -> [MultiLabelModelOutput] {
         let batchIn = MLArrayBatchProvider(array: inputs)
         let batchOut = try model.predictions(from: batchIn, options: options)
-        var results : [MultiLabelModelISpyOutput] = []
+        var results : [MultiLabelModelOutput] = []
         results.reserveCapacity(inputs.count)
         for i in 0..<batchOut.count {
             let outProvider = batchOut.features(at: i)
-            let result =  MultiLabelModelISpyOutput(features: outProvider)
+            let result =  MultiLabelModelOutput(features: outProvider)
             results.append(result)
         }
         return results

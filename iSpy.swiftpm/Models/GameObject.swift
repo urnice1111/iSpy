@@ -34,20 +34,18 @@ struct ObjectDatabase {
     static let allObjects: [GameObject] = [
         // --- EASY (Colores vibrantes y formas únicas) ---
         GameObject(name: "Traffic Cone", category: "Road", difficulty: .easy), //listo down
-//        GameObject(name: "Fire Hydrant", category: "Urban", difficulty: .easy), //listo down
-//        GameObject(name: "Bicycle", category: "Vehicle", difficulty: .easy), //listo down
-//        GameObject(name: "Bus Stop", category: "Urban", difficulty: .easy), //listo downloaded splitted
-//        GameObject(name: "Zebra Crossing", category: "Road", difficulty: .easy), //listo down
+        GameObject(name: "Fire Hydrant", category: "Urban", difficulty: .easy), //listo down
+        GameObject(name: "Bicycle", category: "Vehicle", difficulty: .easy), //listo down
+        GameObject(name: "Bus Stop", category: "Urban", difficulty: .easy), //listo downloaded splitted
         GameObject(name: "Traffic Light", category: "Road", difficulty: .easy), //listo down splitted
         GameObject(name: "Stop Sign", category: "Road", difficulty: .easy), //listo down
 
         // --- MEDIUM (Requieren más atención al entorno) ---
         GameObject(name: "Wind Turbine", category: "Energy", difficulty: .medium), //listo down
         GameObject(name: "Electric Tower", category: "Infrastructure", difficulty: .medium), //listo down
-        GameObject(name: "Road Sign", category: "Road", difficulty: .medium), //listo down
+        GameObject(name: "Traffic Sign", category: "Road", difficulty: .medium), //listo down
         GameObject(name: "Construction Crane", category: "Construction", difficulty: .medium), //listo down
-        GameObject(name: "Cow", category: "Nature", difficulty: .medium), //listo down
-        GameObject(name: "Gas Station", category: "Urban", difficulty: .medium), //listo down
+        GameObject(name: "Gas Station Price Board", category: "Urban", difficulty: .medium), //listo down
 //        GameObject(name: "Bridge", category: "Infrastructure", difficulty: .medium),
 
         // --- HARD (Objetos en movimiento o menos frecuentes) ---
@@ -59,10 +57,10 @@ struct ObjectDatabase {
     
     static func getRandomObjects(easy: Int = 3, medium: Int = 2, hard: Int = 1) -> [GameObject] {
         let easyObjects = allObjects.filter { $0.difficulty == .easy }.shuffled().prefix(easy)
-        //        let mediumObjects = allObjects.filter { $0.difficulty == .medium }.shuffled().prefix(medium)
-        //        let hardObjects = allObjects.filter { $0.difficulty == .hard }.shuffled().prefix(hard)
+                let mediumObjects = allObjects.filter { $0.difficulty == .medium }.shuffled().prefix(medium)
+                let hardObjects = allObjects.filter { $0.difficulty == .hard }.shuffled().prefix(hard)
         
-        return Array(easyObjects)  /*Array(mediumObjects) + Array(hardObjects)*/
+        return Array(easyObjects) + Array(mediumObjects) + Array(hardObjects)
     }
 }
 

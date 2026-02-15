@@ -100,7 +100,7 @@ struct HomeView: View {
                     } else {
                         ScrollView(.horizontal, showsIndicators: false) {
                             LazyHStack(spacing: 16) {
-                                ForEach(gameState.collectedItems.prefix(6), id: \.id) { item in
+                                ForEach(gameState.collectedItems.sorted(by: { $0.timestamp > $1.timestamp }).prefix(6), id: \.id) { item in
                                     RecentItemCard(item: item)
                                 }
                             }

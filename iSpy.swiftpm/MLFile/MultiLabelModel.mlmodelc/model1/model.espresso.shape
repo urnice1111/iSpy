@@ -2,14 +2,14 @@
   "layer_shapes" : {
     "targetProbability" : {
       "k" : 1,
-      "w" : 5,
+      "w" : 16,
       "n" : 1,
       "_rank" : 1,
       "h" : 1
     },
     "LastDenseOutput" : {
       "k" : 1,
-      "w" : 5,
+      "w" : 16,
       "n" : 1,
       "_rank" : 1,
       "h" : 1
@@ -23,7 +23,7 @@
     },
     "SqueezedtargetProbability" : {
       "k" : 1,
-      "w" : 5,
+      "w" : 16,
       "n" : 1,
       "_rank" : 1,
       "h" : 1

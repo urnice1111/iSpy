@@ -8,9 +8,23 @@ struct QuizQuestion: Identifiable {
     let correctAnswer: Bool  // true = verdadero, false = falso
 }
 
-private struct QuizQuestionDTO: Codable {
-    let question: String
-    let correctAnswer: Bool
+// MARK: - Generable Quiz Structs
+@available(iOS 26.0, *)
+@Generable
+struct GeneratedQuizQuestion {
+    @Guide(description: "A single true-or-false statement about the object. One sentence max. Fun and educational.")
+    var question: String
+    
+    @Guide(description: "true if the statement is correct, false if it is incorrect")
+    var correctAnswer: Bool
+}
+
+@available(iOS 26.0, *)
+@Generable
+struct GeneratedQuiz {
+    @Guide(description: "Exactly 3 true-or-false questions about the object, suitable for all ages")
+    @Guide(.count(3...3))
+    var questions: [GeneratedQuizQuestion]
 }
 
 // MARK: - Chat Message Model
@@ -63,46 +77,22 @@ class AppleIntelligenceService {
         let prompt = """
         You are a friendly guide for a road trip discovery game called "iSpy".
         A player just found and photographed: "\(objectName)".
-        
-        Generate exactly 3 true or false questions about "\(objectName)". Make them fun, educational, and suitable for all ages. Each question should be a single statement (1 sentence max).
-        
-        Respond ONLY with a valid JSON array. No other text. Format:
-        [{"question": "statement here", "correctAnswer": true}, {"question": "...", "correctAnswer": false}, {"question": "...", "correctAnswer": true}]
-        
-        Use "correctAnswer": true for TRUE statements, "correctAnswer": false for FALSE statements.
+        Generate 3 true or false questions about "\(objectName)".
+        Make them fun, educational, and suitable for all ages.
         """
         
         do {
             let session = LanguageModelSession()
-            let response = try await session.respond(to: prompt)
-            return try parseQuizQuestions(from: response.content)
+            let response = try await session.respond(
+                to: prompt,
+                generating: GeneratedQuiz.self
+            )
+            return response.content.questions.map { q in
+                QuizQuestion(question: q.question, correctAnswer: q.correctAnswer)
+            }
         } catch {
             errorMessage = "Failed to generate quiz: \(error.localizedDescription)"
             throw error
-        }
-    }
-    
-    private func parseQuizQuestions(from content: String) throws -> [QuizQuestion] {
-        // Extract JSON array from response (LLM may add extra text)
-        guard let start = content.firstIndex(of: "["),
-              let end = content.lastIndex(of: "]"),
-              start < end else {
-            throw AppleIntelligenceError.generationFailed("Invalid response format")
-        }
-        
-        let jsonString = String(content[start...end])
-        guard let data = jsonString.data(using: .utf8) else {
-            throw AppleIntelligenceError.generationFailed("Invalid encoding")
-        }
-        
-        let dtos = try JSONDecoder().decode([QuizQuestionDTO].self, from: data)
-        
-        guard dtos.count >= 3 else {
-            throw AppleIntelligenceError.generationFailed("Expected at least 3 questions")
-        }
-        
-        return dtos.prefix(3).map { dto in
-            QuizQuestion(question: dto.question, correctAnswer: dto.correctAnswer)
         }
     }
     
@@ -110,15 +100,13 @@ class AppleIntelligenceService {
     // MARK: - Errors
     enum AppleIntelligenceError: LocalizedError {
         case notAvailable
-        case noActiveSession
         case generationFailed(String)
         
         var errorDescription: String? {
             switch self {
             case .notAvailable:
                 return "Apple Intelligence is not available on this device. Requires iPhone 15 Pro or newer, or M-series iPad."
-            case .noActiveSession:
-                return "No active chat session. Please start a new conversation."
+
             case .generationFailed(let reason):
                 return "Failed to generate content: \(reason)"
             }

@@ -37,23 +37,41 @@ struct GameView: View {
                     .font(.caption)
                     .foregroundStyle(.white.opacity(0.8))
                 Text(timeString(from: timeRemaining))
-                    .font(.system(size: 28, weight: .bold))
+                    .font(.system(size: 28, weight: .bold, design: .rounded))
                     .foregroundStyle(.white)
-            }
-            
-            Button {
-                showingEndGameAlert = true
-            } label : {
-                Text("End")
-                    .foregroundStyle(Color.red)
+                    .contentTransition(.numericText())
             }
             
             Spacer()
             
             Button {
+                showingEndGameAlert = true
+            } label: {
+                Text("End Game")
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(.red)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
+                    .background(.ultraThinMaterial, in: Capsule())
+                    .overlay(
+                        Capsule()
+                            .stroke(.white.opacity(0.15), lineWidth: 0.5)
+                    )
+            }
+            
+            Button {
                 popToRoot = false
             } label: {
-                closeButtonLabel()
+                Image(systemName: "xmark")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundStyle(.white.opacity(0.9))
+                    .padding(10)
+                    .background(.ultraThinMaterial, in: Circle())
+                    .overlay(
+                        Circle()
+                            .stroke(.white.opacity(0.15), lineWidth: 0.5)
+                    )
             }
         }
         .padding()
@@ -141,25 +159,7 @@ struct GameView: View {
         }
     }
     
-    @ViewBuilder
-    private func closeButtonLabel() -> some View {
-        Image(systemName: "xmark")
-            .font(.system(size: 30))
-            .foregroundStyle(.white)
-            .clipShape(Circle())
-            .font(.system(size: 20, weight: .bold))
-            .foregroundStyle(.white.opacity(0.8))
-            .padding(12)
-            .background {
-                Circle()
-                    .fill(.ultraThinMaterial)
-            }
-            .overlay {
-                Circle()
-                    .stroke(.white.opacity(0.2), lineWidth: 0.5)
-            }
-            .shadow(color: .black.opacity(0.1), radius: 10, x: 0, y: 5)
-    }
+    
     
     var body: some View {
         ZStack {
@@ -338,9 +338,9 @@ struct GameView: View {
         // Prepare image for CoreML (quick operation, can stay on main thread)
         let preparedImage = cameraService.prepareForCoreML() ?? image
         
+        let detectionService = self.detectionService
         DispatchQueue.global(qos: .userInitiated).async {
             // Heavy ML work happens here - OFF the main thread
-            let detectionService = ObjectDetectionService()
             let detectedObjects = detectionService.detectObjects(in: preparedImage)
             
             // Check if any of the detected objects match objects we're looking for

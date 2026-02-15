@@ -7,13 +7,9 @@ class ObjectDetectionService {
     // The Vision CoreML model
     private var visionModel: VNCoreMLModel?
     
-    // Track if model is ready
     private(set) var isModelReady: Bool = false
     
-    // Confidence threshold - adjust this value (0.0 to 1.0)
-    // Lower = more detections but more false positives
-    // Higher = fewer detections but more accurate
-    var confidenceThreshold: Float = 0.5
+    var confidenceThreshold: Float = 0.70
     
     @available(iOS 17.0, *)
     init() {
@@ -21,18 +17,18 @@ class ObjectDetectionService {
         setupModelAsync()
     }
     
-    /// Setup the CoreML model asynchronously to avoid UI freezing
+    // Setup the CoreML model asynchronously to avoid UI freezing
     @available(iOS 17.0, *)
     private func setupModelAsync() {
         nonisolated(unsafe) let weakSelf = self
         DispatchQueue.global(qos: .userInitiated).async {
             let config = MLModelConfiguration()
             config.computeUnits = .cpuAndGPU
-
+            
             do {
                 
                 // Change the name for the model in later iterations until the final model is done. This is a reminder for you, Emiliano.
-                let coreMLModel = try MultiLabelModelISpy(configuration: config)
+                let coreMLModel = try MultiLabelModel(configuration: config)
                 let model = coreMLModel.model
                 let visionModel = try VNCoreMLModel(for: model)
                 
@@ -104,14 +100,14 @@ class ObjectDetectionService {
         do {
             try handler.perform([request])
         } catch {
-            print("❌ Failed to perform Vision request: \(error)")
+            print("Failed to perform Vision request: \(error)")
         }
         
         return detectedObjects
     }
     
-    /// Check if a specific object was found in the detection results
-    /// Uses flexible matching (case-insensitive, partial matches)
+    // Check if a specific object was found in the detection results
+    // Uses flexible matching (case-insensitive, partial matches)
     func checkIfObjectFound(_ objectName: String, in detectedObjects: [String]) -> Bool {
         let lowerObjectName = objectName.lowercased()
         
@@ -171,14 +167,14 @@ class ObjectDetectionService {
         return results
     }
     
-    // MARK: - Mock Data for Testing
     
-    /// Returns mock detection results for testing the UI without a model
-    private func mockDetection() -> [String] {
-        // Randomly return some objects for testing
-        let possibleObjects = ["Car", "Tree", "Road", "Sky", "Building", "Traffic Sign"]
-        let count = Int.random(in: 0...3)
-        return Array(possibleObjects.shuffled().prefix(count))
-    }
+    //    // MARK: - Mock Data for Testing
+    //
+    //    // Returns mock detection results for testing the UI without a model. JUST FOR DEBUGING.
+    //    private func mockDetection() -> [String] {
+    //        // Randomly return some objects for testing
+    //        let possibleObjects = ["Car", "Tree", "Road", "Sky", "Building", "Traffic Sign"]
+    //        let count = Int.random(in: 0...3)
+    //        return Array(possibleObjects.shuffled().prefix(count))
+    //    }
 }
-

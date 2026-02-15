@@ -1,7 +1,7 @@
 [
   {
     "metadataOutputVersion" : "3.0",
-    "shortDescription" : "Model for multi label classification for SSC App iSpy",
+    "storagePrecision" : "Float32",
     "outputSchema" : [
       {
         "isOptional" : "0",
@@ -12,7 +12,6 @@
         "shortDescription" : ""
       }
     ],
-    "storagePrecision" : "Float32",
     "modelParameters" : [
 
     ],
@@ -60,21 +59,32 @@
       }
     ],
     "classLabels" : [
-      "Car",
-      "Road",
-      "Speed Sign",
+      "Ambulance",
+      "Bicycle",
+      "Bus Stop",
+      "Church",
+      "Construction Crane",
+      "Electric Tower",
+      "Fire Hydrant",
+      "Gas Station Price Board",
+      "Police Car",
+      "Stop Sign",
+      "Tractor",
+      "Traffic Cone",
       "Traffic Light",
-      "Traffic Sign"
+      "Traffic Sign",
+      "Wind Turbine",
+      "Zebra Crossing"
     ],
-    "generatedClassName" : "MultiLabelModelISpy",
+    "generatedClassName" : "MultiLabelModel",
     "userDefinedMetadata" : {
       "com.apple.coreml.model.preview.type" : "multiLabelImageClassifier",
-      "com.apple.createml.training.started" : "2025-12-29T03:29:41Z",
+      "com.apple.createml.training.started" : "2026-01-05T07:35:43Z",
       "com.apple.createml.version" : "26.1.0",
-      "com.apple.createml.training.finished" : "2025-12-29T03:29:43Z",
+      "com.apple.createml.training.finished" : "2026-01-05T07:36:02Z",
       "com.apple.createml.app.tag" : "175.6",
-      "com.apple.createml.model.mlic.confidenceThresholds" : "{\"Car\":0.25682193,\"Speed Sign\":0.6881251,\"Traffic Light\":0.2582792,\"Road\":0.29996398,\"Traffic Sign\":0.41731068}",
-      "com.apple.createml.model.created" : "2025-12-29T03:29:43Z",
+      "com.apple.createml.model.mlic.confidenceThresholds" : "{\"Church\":0.2005553,\"Construction Crane\":0.20046604,\"Traffic Cone\":0.2008262,\"Tractor\":0.20066676,\"Police Car\":0.30069238,\"Wind Turbine\":0.2004481,\"Stop Sign\":0.40058246,\"Ambulance\":0.30049515,\"Zebra Crossing\":0.20062217,\"Bicycle\":0.20081991,\"Electric Tower\":0.40020066,\"Gas Station Price Board\":0.30095327,\"Bus Stop\":0.3003903,\"Traffic Sign\":0.30173677,\"Fire Hydrant\":0.3009843,\"Traffic Light\":0.3019231}",
+      "com.apple.createml.model.created" : "2026-01-05T07:36:02Z",
       "com.apple.createml.app.version" : "6.2"
     },
     "neuralNetworkLayerTypeHistogram" : {
