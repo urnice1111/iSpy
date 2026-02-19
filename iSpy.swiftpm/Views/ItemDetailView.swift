@@ -140,6 +140,8 @@ struct ItemDetailView: View {
                 }
             }
             
+            Text("Complete this quiz to earn extra points. This quiz is AI generated")
+            
             if !isRetrying, let bonus = currentItem.quizBonusPoints ?? completedQuizBonus {
                 // Already completed
                 VStack(spacing: 12) {
