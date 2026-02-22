@@ -25,12 +25,12 @@ struct HomeView: View {
                         .foregroundStyle(Color("Title"))
                         .shadow(color: .black.opacity(0.15), radius: 2, y: 2)
                         .padding(.top, 16)
+                        .padding(.bottom, 50)
                     
                     HStack(alignment: .top, spacing: 24) {
                         
                         PointsWidget(score: gameState.totalScore)
                             .frame(maxWidth: 280)
-                        
                         
                         VStack(spacing: 8) {
                             Image("RoadTrip")
@@ -58,8 +58,34 @@ struct HomeView: View {
                         }
                         .frame(maxWidth: 400)
                         
-                        Color.clear
-                            .frame(maxWidth: 280)
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("At a glance")
+                                .font(.custom("FredokaOne-Regular", size: 40))
+                                .foregroundStyle(.white)
+                                .shadow(color: .black.opacity(0.15), radius: 2, y: 2)
+                            
+                            HStack(spacing: 12) {
+                                StatsWidget(
+                                    value: "\(gameState.collectedItems.count)",
+                                    label: "Founded",
+                                    icon: "checkmark"
+                                )
+                                
+                                StatsWidget(
+                                    value: "\(gameState.completedChallengesCount)",
+                                    label: "Trips",
+                                    icon: "flag"
+                                )
+                            }
+                            
+                            Text("Recent Finds")
+                                .font(.custom("FredokaOne-Regular", size: 40))
+                                .foregroundStyle(.white)
+                                .shadow(color: .black.opacity(0.15), radius: 2, y: 2)
+                            
+                            Spacer()
+                        }
+                        .frame(maxWidth: 320)
                     }
                     .padding(.horizontal, 24)
                     
@@ -87,7 +113,6 @@ struct AdventureCard: View {
 // MARK: - Points Widget
 
 struct PointsWidget: View {
-    
     var score: Int
     
     var body: some View {
@@ -109,21 +134,54 @@ struct PointsWidget: View {
         .padding(12)
         .frame(maxWidth: .infinity)
         .background(
-            ZStack{
+            ZStack {
                 RoundedRectangle(cornerRadius: 16)
                     .fill(Color("ColorOffset"))
                     .shadow(color: .black.opacity(0.4), radius: 6, y: 3)
-                    .offset(y:5)
+                    .offset(y: 5)
                 
                 RoundedRectangle(cornerRadius: 16)
                     .fill(.white)
                     .shadow(color: .black.opacity(0.4), radius: 6, y: 3)
-                
-                
             }
-            
         )
-        
     }
 }
 
+struct StatsWidget: View {
+    let value: String
+    let label: String
+    let icon: String
+    
+    var body: some View {
+        VStack(spacing: 6) {
+            Image(icon)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 50, height: 50)
+            
+            Text(value)
+                .font(.custom("FredokaOne-Regular", size: 36))
+                .foregroundStyle(.black)
+            
+            Text(label)
+                .font(.custom("FredokaOne-Regular", size: 14))
+                .foregroundStyle(Color("StatsText"))
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, minHeight: 140, maxHeight: 140)
+        .background(
+            ZStack {
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(Color("ColorOffset"))
+                    .shadow(color: .black.opacity(0.4), radius: 6, y: 3)
+                    .offset(y: 5)
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(.white)
+                    .shadow(color: .black.opacity(0.4), radius: 6, y: 3)
+            }
+        )
+    }
+}

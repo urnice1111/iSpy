@@ -1,13 +1,17 @@
 import SwiftUI
 
-
 @available(iOS 18.0, *)
 struct ContentView: View {
     var body: some View {
         TabView {
-            Tab("Home", systemImage: "house.fill") {
-                HomeView()
-            }
+            HomeView()
+                .tabItem {
+                    Label("Home", systemImage: "house.fill")
+                }
+            GalleryView()
+                .tabItem {
+                    Label("Gallery", systemImage: "photo.on.rectangle")
+                }
         }
     }
 }

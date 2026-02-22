@@ -29,42 +29,49 @@ struct GameView: View {
     
     @ViewBuilder
     private func headerView() -> some View {
-        ZStack {
-            Color(red: 0.35, green: 0.78, blue: 0.98)
+        HStack {
+//            Button {
+//                showingEndGameAlert = true
+//            } label: {
+//                Image(systemName: "xmark.circle.fill")
+//                    .font(.system(size: 28))
+//                    .foregroundStyle(.white)
+//                    .shadow(color: .black.opacity(0.2), radius: 2, y: 1)
+//            }
             
-            HStack {
-                cloudShape()
-                    .offset(x: -10, y: 8)
-                Spacer()
-                cloudShape()
-                    .offset(x: 20, y: -4)
+            Button {
+                showingEndGameAlert = true
+            } label: {
+                Text("End Game")
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(.red)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
+                    .background(.ultraThinMaterial, in: Capsule())
+                    .overlay(
+                        Capsule()
+                            .stroke(.white.opacity(0.15), lineWidth: 0.5)
+                    )
             }
-            .opacity(0.5)
             
-            HStack {
-                Button {
-                    showingEndGameAlert = true
-                } label: {
-                    Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 28))
-                        .foregroundStyle(.white)
-                        .shadow(color: .black.opacity(0.2), radius: 2, y: 1)
-                }
-                
-                Spacer()
-                
-                Text("¡Busca los objetos!")
-                    .font(.custom("FredokaOne-Regular", size: 28))
-                    .foregroundStyle(Color("Title"))
-                    .shadow(color: .black.opacity(0.15), radius: 1, y: 2)
-                
-                Spacer()
-            
+            Button {
+                popToRoot = false
+            } label: {
+                Image(systemName: "xmark")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundStyle(.white.opacity(0.9))
+                    .padding(10)
+                    .background(.ultraThinMaterial, in: Circle())
+                    .overlay(
+                        Circle()
+                            .stroke(.white.opacity(0.15), lineWidth: 0.5)
+                    )
             }
-            .padding(.horizontal, 16)
+            
         }
-        .frame(height: 64)
-        .clipShape(Rectangle())
+        .padding(.horizontal, 16)
+        
     }
     
     @ViewBuilder
@@ -91,15 +98,6 @@ struct GameView: View {
                 }
                 .padding(.horizontal, 14)
                 .padding(.vertical, 8)
-                .background(
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 12)
-                            .fill(Color("ColorOffset"))
-                            .offset(y: 3)
-                        RoundedRectangle(cornerRadius: 12)
-                            .fill(.white)
-                    }
-                )
                 
                 ForEach(challenge.objectsToFind) { object in
                     let found = challenge.isObjectFound(object)
@@ -209,26 +207,30 @@ struct GameView: View {
             }
             
             VStack(spacing: 0) {
-                headerView()
+                HStack{
+                    headerView()
+                    Spacer()
+                }
                 
                 HStack {
-                    Spacer()
-                    
-                    VStack {
-                        Spacer()
-                        captureButtonView()
-                            .padding(.bottom, 24)
-                    }
-                    
-                    Spacer()
-                    
                     VStack {
                         objectsListView()
                             .padding(.top, 16)
                         Spacer()
                     }
                     .padding(.trailing, 16)
+                    
+                    Spacer()
+                    
+                    VStack {
+                        Spacer()
+                        captureButtonView()
+                            .padding(.bottom, 24)
+                        Spacer()
+                    }
+                                    
                 }
+                .padding(.horizontal,20)
             }
         }
         .onAppear {
