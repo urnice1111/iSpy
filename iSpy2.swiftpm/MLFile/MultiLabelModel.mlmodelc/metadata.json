@@ -1,0 +1,97 @@
+[
+  {
+    "metadataOutputVersion" : "3.0",
+    "storagePrecision" : "Float32",
+    "outputSchema" : [
+      {
+        "isOptional" : "0",
+        "keyType" : "String",
+        "formattedType" : "Dictionary (String → Double)",
+        "type" : "Dictionary",
+        "name" : "targetProbability",
+        "shortDescription" : ""
+      }
+    ],
+    "modelParameters" : [
+
+    ],
+    "author" : "UwU",
+    "specificationVersion" : 8,
+    "computePrecision" : "Float16",
+    "isUpdatable" : "0",
+    "stateSchema" : [
+
+    ],
+    "availability" : {
+      "macOS" : "14.0",
+      "tvOS" : "17.0",
+      "visionOS" : "1.0",
+      "watchOS" : "unavailable",
+      "iOS" : "17.0",
+      "macCatalyst" : "17.0"
+    },
+    "modelType" : {
+      "name" : "MLModelType_pipeline",
+      "structure" : [
+        {
+          "name" : "MLModelType_visionFeaturePrint"
+        },
+        {
+          "name" : "MLModelType_neuralNetworkClassifier"
+        },
+        {
+          "name" : "MLModelType_classConfidenceThresholding"
+        }
+      ]
+    },
+    "inputSchema" : [
+      {
+        "height" : "360",
+        "colorspace" : "BGR",
+        "isOptional" : "0",
+        "width" : "360",
+        "isColor" : "1",
+        "formattedType" : "Image (Color 360 × 360)",
+        "hasSizeFlexibility" : "0",
+        "type" : "Image",
+        "shortDescription" : "",
+        "name" : "image"
+      }
+    ],
+    "classLabels" : [
+      "Ambulance",
+      "Bicycle",
+      "Bus Stop",
+      "Church",
+      "Construction Crane",
+      "Electric Tower",
+      "Fire Hydrant",
+      "Gas Station Price Board",
+      "Police Car",
+      "Stop Sign",
+      "Tractor",
+      "Traffic Cone",
+      "Traffic Light",
+      "Traffic Sign",
+      "Wind Turbine",
+      "Zebra Crossing"
+    ],
+    "generatedClassName" : "MultiLabelModel",
+    "userDefinedMetadata" : {
+      "com.apple.coreml.model.preview.type" : "multiLabelImageClassifier",
+      "com.apple.createml.training.started" : "2026-01-05T07:35:43Z",
+      "com.apple.createml.version" : "26.1.0",
+      "com.apple.createml.training.finished" : "2026-01-05T07:36:02Z",
+      "com.apple.createml.app.tag" : "175.6",
+      "com.apple.createml.model.mlic.confidenceThresholds" : "{\"Church\":0.2005553,\"Construction Crane\":0.20046604,\"Traffic Cone\":0.2008262,\"Tractor\":0.20066676,\"Police Car\":0.30069238,\"Wind Turbine\":0.2004481,\"Stop Sign\":0.40058246,\"Ambulance\":0.30049515,\"Zebra Crossing\":0.20062217,\"Bicycle\":0.20081991,\"Electric Tower\":0.40020066,\"Gas Station Price Board\":0.30095327,\"Bus Stop\":0.3003903,\"Traffic Sign\":0.30173677,\"Fire Hydrant\":0.3009843,\"Traffic Light\":0.3019231}",
+      "com.apple.createml.model.created" : "2026-01-05T07:36:02Z",
+      "com.apple.createml.app.version" : "6.2"
+    },
+    "neuralNetworkLayerTypeHistogram" : {
+      "Squeeze" : 1,
+      "InnerProduct" : 1,
+      "ActivationSigmoid" : 1
+    },
+    "method" : "predict"
+  }
+]

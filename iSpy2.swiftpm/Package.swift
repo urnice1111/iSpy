@@ -40,7 +40,8 @@ let package = Package(
             name: "AppModule",
             path: ".",
             resources: [
-                .process("FredokaOne-Regular.ttf")
+                .process("FredokaOne-Regular.ttf"),
+                .copy("MLFile/MultiLabelModel.mlmodelc")
             ]
         )
     ],

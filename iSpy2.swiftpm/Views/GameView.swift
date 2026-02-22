@@ -1,4 +1,5 @@
 import SwiftUI
+import CoreML
 import AVFoundation
 
 @available(iOS 17.0, *)
@@ -9,6 +10,7 @@ struct GameView: View {
     @State private var timer: Timer?
     @State private var showingCompletionAlert = false
     @State private var showingEndGameAlert = false
+    @State private var mlModel: MultiLabelModel?
     @Environment(\.dismiss) var dismiss
     @Binding var popToRoot: Bool
     
@@ -27,70 +29,123 @@ struct GameView: View {
     
     @ViewBuilder
     private func headerView() -> some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Time Remaining")
-                    .font(.caption)
-                    .foregroundStyle(.white.opacity(0.8))
-                Text(timeString(from: timeRemaining))
-                    .font(.system(size: 28, weight: .bold, design: .rounded))
-                    .foregroundStyle(.white)
-                    .contentTransition(.numericText())
-            }
+        ZStack {
+            Color(red: 0.35, green: 0.78, blue: 0.98)
             
-            Spacer()
-            
-            Button {
-                showingEndGameAlert = true
-            } label: {
-                Text("End Game")
-                    .font(.subheadline)
-                    .fontWeight(.semibold)
-                    .foregroundStyle(.red)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 10)
-                    .background(.ultraThinMaterial, in: Capsule())
-                    .overlay(Capsule().stroke(.white.opacity(0.15), lineWidth: 0.5))
+            HStack {
+                cloudShape()
+                    .offset(x: -10, y: 8)
+                Spacer()
+                cloudShape()
+                    .offset(x: 20, y: -4)
             }
+            .opacity(0.5)
             
-            Button {
-                popToRoot = false
-            } label: {
-                Image(systemName: "xmark")
-                    .font(.system(size: 14, weight: .bold))
-                    .foregroundStyle(.white.opacity(0.9))
-                    .padding(10)
-                    .background(.ultraThinMaterial, in: Circle())
-                    .overlay(Circle().stroke(.white.opacity(0.15), lineWidth: 0.5))
+            HStack {
+                Button {
+                    showingEndGameAlert = true
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 28))
+                        .foregroundStyle(.white)
+                        .shadow(color: .black.opacity(0.2), radius: 2, y: 1)
+                }
+                
+                Spacer()
+                
+                Text("¡Busca los objetos!")
+                    .font(.custom("FredokaOne-Regular", size: 28))
+                    .foregroundStyle(Color("Title"))
+                    .shadow(color: .black.opacity(0.15), radius: 1, y: 2)
+                
+                Spacer()
+            
             }
+            .padding(.horizontal, 16)
         }
-        .padding()
-        .background(
-            LinearGradient(
-                colors: [Color.black.opacity(0.6), Color.clear],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-        )
+        .frame(height: 64)
+        .clipShape(Rectangle())
     }
     
-    // MARK: - Objects List
+    @ViewBuilder
+    private func cloudShape() -> some View {
+        Image(systemName: "cloud.fill")
+            .font(.system(size: 50))
+            .foregroundStyle(.white)
+    }
+    
+    // MARK: - Objects List (right side card)
     
     @ViewBuilder
     private func objectsListView() -> some View {
         if let challenge = challenge {
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 12) {
-                    ForEach(challenge.objectsToFind) { object in
-                        ObjectStatusCard(
-                            object: object,
-                            isFound: challenge.isObjectFound(object)
-                        )
+            VStack(spacing: 10) {
+                HStack(spacing: 6) {
+                    Image("Star")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 30, height: 30)
+                    Text("\(gameState.totalScore)")
+                        .font(.custom("FredokaOne-Regular", size: 18))
+                        .foregroundStyle(.black)
+                }
+                .padding(.horizontal, 14)
+                .padding(.vertical, 8)
+                .background(
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(Color("ColorOffset"))
+                            .offset(y: 3)
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(.white)
+                    }
+                )
+                
+                ForEach(challenge.objectsToFind) { object in
+                    let found = challenge.isObjectFound(object)
+                    HStack(spacing: 10) {
+                        Image(ObjectStatusCard.assetName(for: object))
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 44, height: 44)
+                        
+                        Spacer()
+                        
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 6)
+                                .stroke(found ? Color.green : Color.gray.opacity(0.4), lineWidth: 2)
+                                .frame(width: 26, height: 26)
+                            
+                            if found {
+                                Image(systemName: "checkmark")
+                                    .font(.system(size: 16, weight: .bold))
+                                    .foregroundStyle(.green)
+                            }
+                        }
                     }
                 }
-                .padding(.horizontal)
+                
+                Text(timeString(from: timeRemaining))
+                    .font(.custom("FredokaOne-Regular", size: 18))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .background(Capsule().fill(.black.opacity(0.35)))
+                    .contentTransition(.numericText())
+                
             }
-            .padding(.bottom, 20)
+            .padding(16)
+            .frame(width: 140)
+            .background(
+                ZStack {
+                    RoundedRectangle(cornerRadius: 20)
+                        .fill(Color("ColorOffset"))
+                        .offset(y: 4)
+                    RoundedRectangle(cornerRadius: 20)
+                        .fill(.white)
+                }
+            )
+            .shadow(color: .black.opacity(0.15), radius: 8, y: 4)
         }
     }
     
@@ -100,18 +155,27 @@ struct GameView: View {
     private func captureButtonView() -> some View {
         if !cameraService.isTaken {
             Button {
-                cameraService.takePicture()
+                let orientation = UIApplication.shared.connectedScenes
+                    .compactMap { $0 as? UIWindowScene }
+                    .first?.interfaceOrientation ?? .landscapeRight
+                cameraService.takePicture(interfaceOrientation: orientation)
             } label: {
                 ZStack {
                     Circle()
-                        .fill(Color.white)
-                        .frame(width: 70, height: 70)
-                    Circle()
-                        .stroke(Color.white, lineWidth: 3)
+                        .fill(Color.orange)
                         .frame(width: 80, height: 80)
+                        .shadow(color: .orange.opacity(0.5), radius: 6, y: 3)
+                    
+                    Circle()
+                        .stroke(Color.orange.opacity(0.4), lineWidth: 4)
+                        .frame(width: 92, height: 92)
+                    
+                    Image(systemName: "camera.fill")
+                        .font(.system(size: 32))
+                        .foregroundStyle(.white)
                 }
             }
-            .padding(.bottom, 30)
+            
         }
     }
     
@@ -144,17 +208,33 @@ struct GameView: View {
                     )
             }
             
-            VStack {
+            VStack(spacing: 0) {
                 headerView()
-                Spacer()
-                objectsListView()
-                captureButtonView()
-                    .padding()
+                
+                HStack {
+                    Spacer()
+                    
+                    VStack {
+                        Spacer()
+                        captureButtonView()
+                            .padding(.bottom, 24)
+                    }
+                    
+                    Spacer()
+                    
+                    VStack {
+                        objectsListView()
+                            .padding(.top, 16)
+                        Spacer()
+                    }
+                    .padding(.trailing, 16)
+                }
             }
         }
         .onAppear {
             cameraService.checkCameraPermission()
             startTimer()
+            loadModel()
         }
         .onDisappear {
             stopTimer()
@@ -162,6 +242,7 @@ struct GameView: View {
         .onChange(of: cameraService.isTaken) { _, taken in
             if taken {
                 processCapture()
+                print("processCapture called")
             }
         }
         .navigationBarBackButtonHidden(true)
@@ -195,10 +276,49 @@ struct GameView: View {
     // MARK: - Capture Processing (placeholder for future ML)
     
     private func processCapture() {
-        // TODO: Run ML detection here in the future.
-        // For now, just show the captured image briefly then reset.
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+        guard let cgImage = cameraService.capturedImage?.cgImage,
+              let challenge = gameState.currentChallenge else {
             cameraService.reTake()
+            return
+        }
+        
+        DispatchQueue.global(qos: .userInitiated).async {
+            do {
+                guard let model = mlModel else {return}
+                let input = try MultiLabelModelInput(imageWith: cgImage)
+                let output = try model.prediction(input: input)
+                
+                let matched = challenge.objectsToFind.first { object in
+                    !challenge.isObjectFound(object) &&
+                    (output.targetProbability[object.name] ?? 0) >= 0.5
+                }
+                
+                DispatchQueue.main.async {
+                    if let object = matched {
+                        let imageData = cameraService.capturedImage?.jpegData(compressionQuality: 0.8)
+                        gameState.completeObject(object, imageData: imageData)
+                    } else {
+                        // No match — show "not found" feedback, then reset
+                    }
+                    cameraService.reTake()
+                }
+            } catch {
+                print("ML prediction failed: \(error)")
+                DispatchQueue.main.async { cameraService.reTake() }
+            }
+        }
+    }
+    
+    private func loadModel() {
+        DispatchQueue.global(qos: .userInitiated).async {
+            do {
+                let model = try MultiLabelModel(configuration: MLModelConfiguration())
+                DispatchQueue.main.async {
+                    self.mlModel = model
+                }
+            } catch {
+                print("Failed to load model: \(error)")
+            }
         }
     }
     
@@ -338,46 +458,47 @@ struct ObjectStatusCard: View {
     let object: GameObject
     let isFound: Bool
     
-    var difficultyColor: Color {
-        switch object.difficulty {
-        case .easy: return .green
-        case .medium: return .orange
-        case .hard: return .red
+    static func assetName(for object: GameObject) -> String {
+        switch object.name {
+        case "Traffic Cone": return "trafficcone"
+        case "Fire Hydrant": return "firehydrant"
+        case "Bicycle": return "bicycle"
+        case "Bus Stop": return "busstop"
+        case "Traffic Light": return "trafficlight"
+        case "Stop Sign": return "stopsign"
+        case "Wind Turbine": return "windturbine"
+        case "Electric Tower": return "electrictower"
+        case "Traffic Sign": return "trafficsign"
+        case "Construction Crane": return "crane"
+        case "Gas Station Price Board": return "gasprices"
+        case "Police Car": return "policecar"
+        case "Ambulance": return "ambulance"
+        case "Tractor": return "tractor"
+        case "Church": return "church"
+        default: return "questionmark.circle"
         }
     }
     
     var body: some View {
-        VStack(spacing: 8) {
+        HStack(spacing: 10) {
+            Image(Self.assetName(for: object))
+                .resizable()
+                .scaledToFit()
+                .frame(width: 44, height: 44)
+            
+            Spacer()
+            
             ZStack {
-                Circle()
-                    .fill(isFound ? Color.green : Color.white.opacity(0.3))
-                    .frame(width: 50, height: 50)
+                RoundedRectangle(cornerRadius: 6)
+                    .stroke(isFound ? Color.green : Color.gray.opacity(0.4), lineWidth: 2)
+                    .frame(width: 26, height: 26)
                 
                 if isFound {
                     Image(systemName: "checkmark")
-                        .font(.system(size: 24, weight: .bold))
-                        .foregroundStyle(.white)
-                } else {
-                    Text(String(object.name.prefix(1)))
-                        .font(.system(size: 20, weight: .bold))
-                        .foregroundStyle(.white)
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundStyle(.green)
                 }
             }
-            
-            Text(object.name)
-                .font(.system(size: 12, weight: .medium))
-                .foregroundStyle(.white)
-                .lineLimit(1)
-                .frame(width: 70)
-            
-            Text("\(object.points) pts")
-                .font(.system(size: 10))
-                .foregroundStyle(.white.opacity(0.8))
         }
-        .padding(8)
-        .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(isFound ? Color.green.opacity(0.3) : Color.black.opacity(0.4))
-        )
     }
 }

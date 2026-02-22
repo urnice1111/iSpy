@@ -2,6 +2,7 @@ import AVFoundation
 import UIKit
 import SwiftUI
 
+@available(iOS 17.0, *)
 final class CameraService: NSObject, ObservableObject, @unchecked Sendable {
     @Published var session = AVCaptureSession()
     @Published var alert = false
@@ -113,11 +114,27 @@ final class CameraService: NSObject, ObservableObject, @unchecked Sendable {
         }
     }
     
-    func takePicture() {
+    func takePicture(interfaceOrientation: UIInterfaceOrientation = .landscapeRight) {
         sessionQueue.async { [weak self] in
             guard let self = self else { return }
+            
+            if let connection = self.output.connection(with: .video) {
+                let angle: CGFloat = switch interfaceOrientation {
+                case .landscapeLeft: 180
+                case .landscapeRight: 0
+                case .portrait: 90
+                case .portraitUpsideDown: 270
+                default: 0
+                }
+                if connection.isVideoRotationAngleSupported(angle) {
+                    connection.videoRotationAngle = angle
+                }
+            }
+            
             self.output.capturePhoto(with: AVCapturePhotoSettings(), delegate: self)
         }
+        
+        print("Foto tomada")
     }
     
     func reTake() {
@@ -136,6 +153,7 @@ final class CameraService: NSObject, ObservableObject, @unchecked Sendable {
     }
 }
 
+@available(iOS 17.0, *)
 extension CameraService: AVCapturePhotoCaptureDelegate {
     func photoOutput(_ output: AVCapturePhotoOutput, didFinishProcessingPhoto photo: AVCapturePhoto, error: Error?) {
         if error != nil { return }
