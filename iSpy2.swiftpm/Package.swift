@@ -27,9 +27,12 @@ let package = Package(
                 .phone
             ],
             supportedInterfaceOrientations: [
+                .portrait,
+                .portraitUpsideDown,
                 .landscapeRight,
                 .landscapeLeft,
-            ]
+            ],
+            additionalInfoPlistContentFilePath: "Info.plist"
         )
     ],
     targets: [

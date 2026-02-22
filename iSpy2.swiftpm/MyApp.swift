@@ -3,8 +3,16 @@ import CoreText
 import CoreGraphics
 
 @available(iOS 18.0, *)
+class AppDelegate: NSObject, UIApplicationDelegate {
+    func application(_ application: UIApplication, supportedInterfaceOrientationsFor window: UIWindow?) -> UIInterfaceOrientationMask {
+        return .landscape
+    }
+}
+
+@available(iOS 18.0, *)
 @main
 struct MyApp: App {
+    @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 
     init() {
         Self.registerCustomFonts()
@@ -13,6 +21,18 @@ struct MyApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .onAppear {
+                    forceLandscape()
+                }
+        }
+    }
+
+    private func forceLandscape() {
+        guard let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene else { return }
+        let geometryPreferences = UIWindowScene.GeometryPreferences.iOS(interfaceOrientations: .landscape)
+        scene.requestGeometryUpdate(geometryPreferences) { _ in }
+        for window in scene.windows {
+            window.rootViewController?.setNeedsUpdateOfSupportedInterfaceOrientations()
         }
     }
 

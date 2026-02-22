@@ -190,6 +190,9 @@ struct ObjectsSlide: View {
                 .padding(.bottom, 50 * scale)
             }
             .frame(width: w, height: h)
+            .navigationDestination(isPresented: $navigateToGame) {
+                GameView(gameState: gameState, popToRoot: $popToRoot)
+            }
         }
     }
 }

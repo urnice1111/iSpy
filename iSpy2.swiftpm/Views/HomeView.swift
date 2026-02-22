@@ -2,9 +2,16 @@ import SwiftUI
 
 @available(iOS 17.0, *)
 struct HomeView: View {
-    
+        
     @State private var showOnboarding = false
+    @State private var showGame = false
     @State private var gameState = GameState()
+
+    private var hasActiveGame: Bool {
+        guard let challenge = gameState.currentChallenge else { return false }
+        return !challenge.isExpired && !challenge.isCompleted
+    }
+
     var body: some View {
         NavigationStack {
             ZStack {
@@ -21,7 +28,7 @@ struct HomeView: View {
                     
                     HStack(alignment: .top, spacing: 24) {
                         
-                        PointsWidget()
+                        PointsWidget(score: gameState.totalScore)
                             .frame(maxWidth: 280)
                         
                         
@@ -33,9 +40,13 @@ struct HomeView: View {
                                 .shadow(radius: 10)
                             
                             Button {
-                                showOnboarding = true
+                                if hasActiveGame {
+                                    showGame = true
+                                } else {
+                                    showOnboarding = true
+                                }
                             } label: {
-                                Text("Start adventure!")
+                                Text(hasActiveGame ? "Continue adventure!" : "Start adventure!")
                                     .font(.custom("FredokaOne-Regular", size: 22))
                                     .foregroundStyle(.white)
                                     .padding(.horizontal, 32)
@@ -47,7 +58,6 @@ struct HomeView: View {
                         }
                         .frame(maxWidth: 400)
                         
-                        // Placeholder for future widgets (At a Glance, Recent Finds)
                         Color.clear
                             .frame(maxWidth: 280)
                     }
@@ -58,6 +68,9 @@ struct HomeView: View {
             }
             .navigationDestination(isPresented: $showOnboarding) {
                 OnboardingView(gameState: gameState, popToRoot: $showOnboarding)
+            }
+            .navigationDestination(isPresented: $showGame) {
+                GameView(gameState: gameState, popToRoot: $showGame)
             }
         }
     }
@@ -74,6 +87,9 @@ struct AdventureCard: View {
 // MARK: - Points Widget
 
 struct PointsWidget: View {
+    
+    var score: Int
+    
     var body: some View {
         HStack(spacing: 8) {
             Image("Star")
@@ -82,7 +98,7 @@ struct PointsWidget: View {
                 .frame(width: 100, height: 100)
             
             VStack(spacing: 2) {
-                Text("430")
+                Text("\(score)")
                     .font(.custom("FredokaOne-Regular", size: 52))
                     .foregroundStyle(.black)
                 Text("Points")
@@ -110,3 +126,4 @@ struct PointsWidget: View {
         
     }
 }
+
