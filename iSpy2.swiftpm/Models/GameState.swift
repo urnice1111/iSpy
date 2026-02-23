@@ -31,13 +31,13 @@ class GameState {
         currentChallenge = challenge
         
         // Save image to file system and get the path
-        var imagePath: String? = nil
-        if let data = imageData {
-            imagePath = CollectedItem.saveImage(data)
-        }
+//        var imagePath: String? = nil
+//        if let data = imageData {
+//            imagePath = CollectedItem.saveImage(data)
+//        }
         
         // Add to collected items with just the path (not the data)
-        let item = CollectedItem(object: object, imagePath: imagePath, challengeId: challenge.id)
+        let item = CollectedItem(object: object, challengeId: challenge.id)
         collectedItems.append(item)
         
         // Update score

@@ -5,7 +5,7 @@ struct HomeView: View {
         
     @State private var showOnboarding = false
     @State private var showGame = false
-    @State private var gameState = GameState()
+    @Environment(GameState.self) var gameState
 
     private var hasActiveGame: Bool {
         guard let challenge = gameState.currentChallenge else { return false }

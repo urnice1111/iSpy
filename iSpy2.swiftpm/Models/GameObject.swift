@@ -17,6 +17,29 @@ enum Difficulty: String, Codable, CaseIterable {
 struct GameObject: Identifiable, Codable, Hashable {
     let id: UUID
     let name: String
+    var imageName: String {
+        switch name{
+            
+            case "Traffic Cone": return "trafficcone"
+            case "Fire Hydrant": return "firehydrant"
+            case "Bicycle": return "bicycle"
+            case "Bus Stop": return "busstop"
+            case "Traffic Light": return "trafficlight"
+            case "Stop Sign": return "stopsign"
+            case "Wind Turbine": return "windturbine"
+            case "Electric Tower": return "electrictower"
+            case "Traffic Sign": return "trafficsign"
+            case "Construction Crane": return "crane"
+            case "Gas Station Price Board": return "gasprices"
+            case "Police Car": return "policecar"
+            case "Ambulance": return "ambulance"
+            case "Tractor": return "tractor"
+            case "Church": return "church"
+            case "Bridge": return "bridge"
+            default: return "questionmark.circle"
+            
+        }
+    }
     let category: String
     let difficulty: Difficulty
     var points: Int { difficulty.points }

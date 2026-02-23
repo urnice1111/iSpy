@@ -23,15 +23,15 @@ struct OnboardingView: View {
                 .ignoresSafeArea()
             
             TabView(selection: $currentPage) {
-                // Slide 1: How to Play
+                // How to play
                 InstructionsSlide()
                     .tag(0)
                 
+                
+                // Objects to find
                 ObjectsSlide(objects: selectedObjects, gameState: gameState, popToRoot: $popToRoot)
                     .tag(1)
-                // Slide 2: Objects to Find
-                //                ObjectsSlide(objects: selectedObjects, gameState: gameState, popToRoot: $popToRoot)
-                //                    .tag(2)
+
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
             .indexViewStyle(.page(backgroundDisplayMode: .always))
@@ -210,34 +210,10 @@ struct ObjectCard: View {
         }
     }
 
-    var objectImage: String {
-        switch object.name {
-        case "Traffic Cone": return "trafficcone"
-        case "Fire Hydrant": return "firehydrant"
-        case "Bicycle": return "bicycle"
-        case "Bus Stop": return "busstop"
-        case "Traffic Light": return "trafficlight"
-        case "Stop Sign": return "stopsign"
-        case "Wind Turbine": return "windturbine"
-        case "Electric Tower": return "electrictower"
-        case "Traffic Sign": return "trafficsign"
-        case "Construction Crane": return "crane"
-        case "Gas Station Price Board": return "gasprices"
-        case "Police Car": return "policecar"
-        case "Ambulance": return "ambulance"
-        case "Tractor": return "tractor"
-        case "Church": return "church"
-        case "Bridge": return "bridge"
-        default: return "questionmark.circle"
-        }
-    }
-
-
-
     var body: some View {
         HStack(spacing: 12 * scale) {
             Group {
-                Image(objectImage)
+                Image(object.imageName)
                     .resizable()
             }
             .scaledToFit()
@@ -265,7 +241,7 @@ struct ObjectCard: View {
                         .frame(width: 30 * scale, height: 30 * scale)
          
                     Text("\(object.points)")
-                        .font(.system(size: 30 * scale, weight: .semibold))
+                        .font(.custom("FredokaOne-Regular", size: 30 * scale))
                         .foregroundStyle(Color("StatsText"))
                 }
             }
