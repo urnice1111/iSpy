@@ -2,6 +2,10 @@ import SwiftUI
 import CoreML
 import AVFoundation
 
+enum CaptureAnimationPhase {
+    case idle, flash, photoShrink, objectReveal, result, fadeOut
+}
+
 @available(iOS 17.0, *)
 struct GameView: View {
     @StateObject private var cameraService = CameraService()
@@ -16,6 +20,16 @@ struct GameView: View {
     
     @State private var isPinching = false
     @State private var initialZoomFactor: CGFloat = 1.0
+    
+    @State private var animationPhase: CaptureAnimationPhase = .idle
+    @State private var matchedObject: GameObject?
+    @State private var revealObjectIndex = 0
+    @State private var showCaptureConfetti = false
+    @State private var animationPhoto: UIImage?
+    @State private var photoScale: CGFloat = 1.0
+    @State private var photoOpacity: Double = 1.0
+    @State private var flashOpacity: Double = 0.0
+    @State private var overlayOpacity: Double = 1.0
     
     var challenge: GameChallenge? {
         gameState.currentChallenge
@@ -151,7 +165,7 @@ struct GameView: View {
     
     @ViewBuilder
     private func captureButtonView() -> some View {
-        if !cameraService.isTaken {
+        if !cameraService.isTaken && animationPhase == .idle {
             Button {
                 let orientation = UIApplication.shared.connectedScenes
                     .compactMap { $0 as? UIWindowScene }
@@ -232,6 +246,10 @@ struct GameView: View {
                 }
                 .padding(.horizontal,20)
             }
+            .opacity(animationPhase == .idle ? 1 : 0)
+            .animation(.easeOut(duration: 0.15), value: animationPhase)
+            
+            captureAnimationOverlay()
         }
         .onAppear {
             cameraService.checkCameraPermission()
@@ -272,6 +290,7 @@ struct GameView: View {
                 }
             }
         }
+        .sensoryFeedback(.success, trigger: showCaptureConfetti)
         .tint(nil)
     }
     
@@ -284,9 +303,15 @@ struct GameView: View {
             return
         }
         
+        animationPhoto = cameraService.capturedImage
+        let savedImage = cameraService.capturedImage
+        
+        cameraService.reTake()
+        startCaptureAnimation()
+        
         DispatchQueue.global(qos: .userInitiated).async {
             do {
-                guard let model = mlModel else {return}
+                guard let model = mlModel else { return }
                 let input = try MultiLabelModelInput(imageWith: cgImage)
                 let output = try model.prediction(input: input)
                 
@@ -297,16 +322,13 @@ struct GameView: View {
                 
                 DispatchQueue.main.async {
                     if let object = matched {
-                        let imageData = cameraService.capturedImage?.jpegData(compressionQuality: 0.8)
+                        let imageData = savedImage?.jpegData(compressionQuality: 0.8)
                         gameState.completeObject(object, imageData: imageData)
-                    } else {
-                        // No match — show "not found" feedback, then reset
+                        self.matchedObject = object
                     }
-                    cameraService.reTake()
                 }
             } catch {
                 print("ML prediction failed: \(error)")
-                DispatchQueue.main.async { cameraService.reTake() }
             }
         }
     }
@@ -322,6 +344,176 @@ struct GameView: View {
                 print("Failed to load model: \(error)")
             }
         }
+    }
+    
+    // MARK: - Capture Animation Overlay
+    
+    @ViewBuilder
+    private func captureAnimationOverlay() -> some View {
+        if animationPhase != .idle {
+            ZStack {
+                Color.white
+                    .ignoresSafeArea()
+                    .opacity(animationPhase == .flash ? flashOpacity : 1.0)
+                
+                if animationPhase == .photoShrink, let photo = animationPhoto {
+                    Image(uiImage: photo)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(
+                            width: UIScreen.main.bounds.width,
+                            height: UIScreen.main.bounds.height
+                        )
+                        .clipped()
+                        .scaleEffect(photoScale)
+                        .opacity(photoOpacity)
+                        .clipShape(RoundedRectangle(cornerRadius: 20 * (1 - photoScale)))
+                }
+                
+                if animationPhase == .objectReveal, let challenge = challenge {
+                    let objects = challenge.objectsToFind
+                    let idx = min(revealObjectIndex, objects.count - 1)
+                    
+                    Image(ObjectStatusCard.assetName(for: objects[idx]))
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 130, height: 130)
+                        .transition(.asymmetric(
+                            insertion: .scale(scale: 0.2).combined(with: .opacity),
+                            removal: .scale(scale: 1.6).combined(with: .opacity)
+                        ))
+                        .id(revealObjectIndex)
+                }
+                
+                if animationPhase == .result {
+                    if let obj = matchedObject {
+                        VStack(spacing: 20) {
+                            Image(ObjectStatusCard.assetName(for: obj))
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 180, height: 180)
+                            
+                            Text(obj.name)
+                                .font(.custom("FredokaOne-Regular", size: 36))
+                                .foregroundStyle(Color("StatsText"))
+                            
+                            HStack(spacing: 8) {
+                                Image("Star")
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(width: 36, height: 36)
+                                Text("+\(obj.points)")
+                                    .font(.custom("FredokaOne-Regular", size: 32))
+                                    .foregroundStyle(.orange)
+                            }
+                        }
+                        .transition(.scale(scale: 0.5).combined(with: .opacity))
+                    } else {
+                        VStack(spacing: 16) {
+                            Image(systemName: "xmark.circle.fill")
+                                .font(.system(size: 80))
+                                .foregroundStyle(.red.opacity(0.6))
+                            Text("Not Found")
+                                .font(.custom("FredokaOne-Regular", size: 28))
+                                .foregroundStyle(.gray)
+                        }
+                        .transition(.scale(scale: 0.5).combined(with: .opacity))
+                    }
+                    
+                    if showCaptureConfetti {
+                        ConfettiView()
+                            .ignoresSafeArea()
+                            .allowsHitTesting(false)
+                    }
+                }
+            }
+            .opacity(animationPhase == .fadeOut ? overlayOpacity : 1.0)
+            .ignoresSafeArea()
+            .allowsHitTesting(true)
+        }
+    }
+    
+    // MARK: - Capture Animation Driver
+    
+    private func startCaptureAnimation() {
+        guard let challenge = challenge else { return }
+        let objects = challenge.objectsToFind
+        guard !objects.isEmpty else { return }
+        
+        overlayOpacity = 1.0
+        photoScale = 1.0
+        photoOpacity = 1.0
+        flashOpacity = 0.0
+        revealObjectIndex = 0
+        showCaptureConfetti = false
+        matchedObject = nil
+        
+        animationPhase = .flash
+        withAnimation(.easeIn(duration: 0.15)) {
+            flashOpacity = 1.0
+        }
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+            animationPhase = .photoShrink
+            withAnimation(.easeInOut(duration: 0.5)) {
+                photoScale = 0.3
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                withAnimation(.easeOut(duration: 0.2)) {
+                    photoOpacity = 0
+                }
+            }
+        }
+        
+        let revealStart = 0.75
+        DispatchQueue.main.asyncAfter(deadline: .now() + revealStart) {
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+                animationPhase = .objectReveal
+            }
+            
+            for i in 0..<objects.count {
+                DispatchQueue.main.asyncAfter(deadline: .now() + Double(i) * 0.35) {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.5)) {
+                        revealObjectIndex = i
+                    }
+                }
+            }
+            
+            let totalRevealTime = Double(objects.count) * 0.35 + 0.3
+            DispatchQueue.main.asyncAfter(deadline: .now() + totalRevealTime) {
+                withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
+                    animationPhase = .result
+                }
+                
+                if matchedObject != nil {
+                    showCaptureConfetti = true
+                }
+                
+                let resultDisplayTime: Double = matchedObject != nil ? 2.5 : 1.2
+                DispatchQueue.main.asyncAfter(deadline: .now() + resultDisplayTime) {
+                    withAnimation(.easeInOut(duration: 0.5)) {
+                        animationPhase = .fadeOut
+                        overlayOpacity = 0
+                    }
+                    
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.55) {
+                        resetAnimationState()
+                    }
+                }
+            }
+        }
+    }
+    
+    private func resetAnimationState() {
+        animationPhase = .idle
+        matchedObject = nil
+        revealObjectIndex = 0
+        showCaptureConfetti = false
+        animationPhoto = nil
+        photoScale = 1.0
+        photoOpacity = 1.0
+        flashOpacity = 0.0
+        overlayOpacity = 1.0
     }
     
     // MARK: - Timer
