@@ -1,6 +1,6 @@
 import SwiftUI
 
-@available(iOS 18.0, *)
+@available(iOS 26.0, *)
 struct ContentView: View {
     
     @State private var gameState = GameState()

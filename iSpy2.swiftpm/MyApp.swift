@@ -2,14 +2,14 @@ import SwiftUI
 import CoreText
 import CoreGraphics
 
-@available(iOS 18.0, *)
+@available(iOS 26.0, *)
 class AppDelegate: NSObject, UIApplicationDelegate {
     func application(_ application: UIApplication, supportedInterfaceOrientationsFor window: UIWindow?) -> UIInterfaceOrientationMask {
         return .landscape
     }
 }
 
-@available(iOS 18.0, *)
+@available(iOS 26.0, *)
 @main
 struct MyApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate

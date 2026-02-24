@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-@available(iOS 17.0, *)
+@available(iOS 26.0, *)
 struct GalleryView: View {
     @Environment(GameState.self) var gameState
     let cards = Array(1...20)
@@ -156,9 +156,22 @@ struct ObjectCardView: View {
     }
 }
 
-//#Preview {
-//    
-//        GalleryView(gameS)
-//
-//}
+#Preview {
+    if #available(iOS 26.0, *) {
+        let state: GameState = {
+            let s = GameState()
+            s.collectedItems = ObjectDatabase.allObjects.map { obj in
+                CollectedItem(object: obj, challengeId: UUID())
+            }
+            return s
+        }()
+        
+        NavigationStack {
+            GalleryView()
+        }
+        .environment(state)
+    } else {
+        EmptyView()
+    }
+}
 
