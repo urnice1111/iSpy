@@ -19,10 +19,6 @@ struct HomeView: View {
                     .resizable()
                     .ignoresSafeArea()
                 
-                CloudFieldView()
-                    .ignoresSafeArea()
-                    .allowsHitTesting(false)
-                
                 VStack(spacing: 30) {
                     Text("Hey, Explorer!")
                         .font(.custom("FredokaOne-Regular", size: 100))
@@ -33,8 +29,11 @@ struct HomeView: View {
                     
                     HStack(alignment: .top, spacing: 24) {
                         
-                        PointsWidget(score: gameState.totalScore)
-                            .frame(maxWidth: 280)
+                        VStack(spacing: 16) {
+                            PointsWidget(score: gameState.totalScore)
+                            AboutWidget()
+                        }
+                        .frame(maxWidth: 280)
                         
                         VStack(spacing: 8) {
                             Image("RoadTrip")
@@ -61,35 +60,6 @@ struct HomeView: View {
                             .padding(.top, 4)
                         }
                         .frame(maxWidth: 400)
-                        
-                        VStack(alignment: .leading, spacing: 12) {
-                            Text("At a glance")
-                                .font(.custom("FredokaOne-Regular", size: 40))
-                                .foregroundStyle(.white)
-                                .shadow(color: .black.opacity(0.15), radius: 2, y: 2)
-                            
-                            HStack(spacing: 12) {
-                                StatsWidget(
-                                    value: "\(gameState.collectedItems.count)",
-                                    label: "Founded",
-                                    icon: "checkmark"
-                                )
-                                
-                                StatsWidget(
-                                    value: "\(gameState.completedChallengesCount)",
-                                    label: "Trips",
-                                    icon: "flag"
-                                )
-                            }
-                            
-                            Text("Recent Finds")
-                                .font(.custom("FredokaOne-Regular", size: 40))
-                                .foregroundStyle(.white)
-                                .shadow(color: .black.opacity(0.15), radius: 2, y: 2)
-                            
-                            Spacer()
-                        }
-                        .frame(maxWidth: 320)
                     }
                     .padding(.horizontal, 24)
                     
@@ -98,66 +68,11 @@ struct HomeView: View {
             }
             .navigationDestination(isPresented: $showOnboarding) {
                 OnboardingView(gameState: gameState, popToRoot: $showOnboarding)
+                    .toolbar(.hidden, for: .tabBar)
             }
             .navigationDestination(isPresented: $showGame) {
                 GameView(gameState: gameState, popToRoot: $showGame)
-            }
-        }
-    }
-}
-
-// MARK: - Clouds
-
-private struct CloudConfig: Identifiable {
-    let id: Int
-    let size: CGFloat
-    let yFraction: CGFloat
-    let duration: Double
-    let phase: Double
-    let opacity: Double
-}
-
-private let cloudConfigs: [CloudConfig] = [
-    CloudConfig(id: 0, size: 260, yFraction: 0.04, duration: 50, phase: 0.10, opacity: 0.95),
-    CloudConfig(id: 1, size: 100, yFraction: 0.18, duration: 62, phase: 0.55, opacity: 0.45),
-    CloudConfig(id: 2, size: 180, yFraction: 0.10, duration: 44, phase: 0.75, opacity: 0.80),
-    CloudConfig(id: 3, size: 70,  yFraction: 0.30, duration: 70, phase: 0.30, opacity: 0.35),
-    CloudConfig(id: 4, size: 140, yFraction: 0.22, duration: 38, phase: 0.90, opacity: 0.65),
-    CloudConfig(id: 5, size: 220, yFraction: 0.07, duration: 56, phase: 0.45, opacity: 0.85),
-    CloudConfig(id: 6, size: 50,  yFraction: 0.35, duration: 76, phase: 0.15, opacity: 0.30),
-    CloudConfig(id: 7, size: 160, yFraction: 0.14, duration: 42, phase: 0.65, opacity: 0.70),
-]
-
-struct CloudFieldView: View {
-    @State private var startDate = Date.now
-
-    var body: some View {
-        GeometryReader { geo in
-            TimelineView(.animation) { context in
-                let elapsed = context.date.timeIntervalSince(startDate)
-                Canvas { gfxContext, canvasSize in
-                    for cloud in cloudConfigs {
-                        let totalTravel = canvasSize.width + cloud.size
-                        let progress = ((elapsed / cloud.duration) + cloud.phase).truncatingRemainder(dividingBy: 1.0)
-                        let x = -cloud.size / 2 + CGFloat(progress) * totalTravel
-                        let y = canvasSize.height * cloud.yFraction
-
-                        if let resolved = gfxContext.resolveSymbol(id: cloud.id) {
-                            gfxContext.drawLayer { ctx in
-                                ctx.opacity = cloud.opacity
-                                ctx.draw(resolved, at: CGPoint(x: x, y: y))
-                            }
-                        }
-                    }
-                } symbols: {
-                    ForEach(cloudConfigs) { cloud in
-                        Image("Nube")
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: cloud.size)
-                            .tag(cloud.id)
-                    }
-                }
+                    .toolbar(.hidden, for: .tabBar)
             }
         }
     }
@@ -168,6 +83,37 @@ struct CloudFieldView: View {
 struct AdventureCard: View {
     var body: some View {
         
+    }
+}
+
+// MARK: - About Widget
+
+struct AboutWidget: View {
+    var body: some View {
+        HStack(spacing: 8) {
+            Image("profile_icon")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 80, height: 80)
+            
+            Text("About")
+                .font(.custom("FredokaOne-Regular", size: 36))
+                .foregroundStyle(.black)
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity)
+        .background(
+            ZStack {
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(Color("ColorOffset"))
+                    .shadow(color: .black.opacity(0.4), radius: 6, y: 3)
+                    .offset(y: 5)
+                
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(.white)
+                    .shadow(color: .black.opacity(0.4), radius: 6, y: 3)
+            }
+        )
     }
 }
 

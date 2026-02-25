@@ -8,12 +8,14 @@ class GameState {
     var collectedItems: [CollectedItem] = []
     var totalScore: Int = 0
     var completedChallengesCount: Int = 0
+    var challengeTitles: [String: String] = [:]
     
     private let userDefaults = UserDefaults.standard
     private let challengeKey = "currentChallenge"
     private let collectedItemsKey = "collectedItems"
     private let totalScoreKey = "totalScore"
     private let completedChallengesKey = "completedChallengesCount"
+    private let challengeTitlesKey = "challengeTitles"
     
     init() {
         loadState()
@@ -60,24 +62,26 @@ class GameState {
         saveState()
     }
     
+    func updateChallengeTitle(_ challengeId: UUID, title: String) {
+        challengeTitles[challengeId.uuidString] = title
+        saveState()
+    }
+    
     func saveState() {
-        // Capture current values to avoid race conditions
         let challenge = currentChallenge
         let items = collectedItems
         let score = totalScore
         let completedCount = completedChallengesCount
-        // Capture keys locally as Sendable values (String is Sendable)
+        let titles = challengeTitles
         let challengeKey = self.challengeKey
         let collectedItemsKey = self.collectedItemsKey
         let totalScoreKey = self.totalScoreKey
         let completedChallengesKey = self.completedChallengesKey
+        let challengeTitlesKey = self.challengeTitlesKey
         
-        // Perform encoding and saving on background queue to avoid UI freezes
         DispatchQueue.global(qos: .utility).async {
-            // Use UserDefaults.standard directly to avoid capturing non-Sendable self
             let defaults = UserDefaults.standard
             
-            // Save current challenge
             if let challenge = challenge {
                 if let encoded = try? JSONEncoder().encode(challenge) {
                     defaults.set(encoded, forKey: challengeKey)
@@ -86,12 +90,14 @@ class GameState {
                 defaults.removeObject(forKey: challengeKey)
             }
             
-            // Save collected items
             if let encoded = try? JSONEncoder().encode(items) {
                 defaults.set(encoded, forKey: collectedItemsKey)
             }
             
-            // Save score and stats
+            if let encoded = try? JSONEncoder().encode(titles) {
+                defaults.set(encoded, forKey: challengeTitlesKey)
+            }
+            
             defaults.set(score, forKey: totalScoreKey)
             defaults.set(completedCount, forKey: completedChallengesKey)
         }
@@ -110,7 +116,11 @@ class GameState {
             collectedItems = items
         }
         
-        // Load score and stats
+        if let data = userDefaults.data(forKey: challengeTitlesKey),
+           let titles = try? JSONDecoder().decode([String: String].self, from: data) {
+            challengeTitles = titles
+        }
+        
         totalScore = userDefaults.integer(forKey: totalScoreKey)
         completedChallengesCount = userDefaults.integer(forKey: completedChallengesKey)
     }
@@ -120,6 +130,7 @@ class GameState {
         collectedItems = []
         totalScore = 0
         completedChallengesCount = 0
+        challengeTitles = [:]
         saveState()
     }
     
