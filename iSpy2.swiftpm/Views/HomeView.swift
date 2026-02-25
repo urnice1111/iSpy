@@ -19,6 +19,10 @@ struct HomeView: View {
                     .resizable()
                     .ignoresSafeArea()
                 
+                CloudFieldView()
+                    .ignoresSafeArea()
+                    .allowsHitTesting(false)
+                
                 VStack(spacing: 30) {
                     Text("Hey, Explorer!")
                         .font(.custom("FredokaOne-Regular", size: 100))
@@ -97,6 +101,63 @@ struct HomeView: View {
             }
             .navigationDestination(isPresented: $showGame) {
                 GameView(gameState: gameState, popToRoot: $showGame)
+            }
+        }
+    }
+}
+
+// MARK: - Clouds
+
+private struct CloudConfig: Identifiable {
+    let id: Int
+    let size: CGFloat
+    let yFraction: CGFloat
+    let duration: Double
+    let phase: Double
+    let opacity: Double
+}
+
+private let cloudConfigs: [CloudConfig] = [
+    CloudConfig(id: 0, size: 260, yFraction: 0.04, duration: 50, phase: 0.10, opacity: 0.95),
+    CloudConfig(id: 1, size: 100, yFraction: 0.18, duration: 62, phase: 0.55, opacity: 0.45),
+    CloudConfig(id: 2, size: 180, yFraction: 0.10, duration: 44, phase: 0.75, opacity: 0.80),
+    CloudConfig(id: 3, size: 70,  yFraction: 0.30, duration: 70, phase: 0.30, opacity: 0.35),
+    CloudConfig(id: 4, size: 140, yFraction: 0.22, duration: 38, phase: 0.90, opacity: 0.65),
+    CloudConfig(id: 5, size: 220, yFraction: 0.07, duration: 56, phase: 0.45, opacity: 0.85),
+    CloudConfig(id: 6, size: 50,  yFraction: 0.35, duration: 76, phase: 0.15, opacity: 0.30),
+    CloudConfig(id: 7, size: 160, yFraction: 0.14, duration: 42, phase: 0.65, opacity: 0.70),
+]
+
+struct CloudFieldView: View {
+    @State private var startDate = Date.now
+
+    var body: some View {
+        GeometryReader { geo in
+            TimelineView(.animation) { context in
+                let elapsed = context.date.timeIntervalSince(startDate)
+                Canvas { gfxContext, canvasSize in
+                    for cloud in cloudConfigs {
+                        let totalTravel = canvasSize.width + cloud.size
+                        let progress = ((elapsed / cloud.duration) + cloud.phase).truncatingRemainder(dividingBy: 1.0)
+                        let x = -cloud.size / 2 + CGFloat(progress) * totalTravel
+                        let y = canvasSize.height * cloud.yFraction
+
+                        if let resolved = gfxContext.resolveSymbol(id: cloud.id) {
+                            gfxContext.drawLayer { ctx in
+                                ctx.opacity = cloud.opacity
+                                ctx.draw(resolved, at: CGPoint(x: x, y: y))
+                            }
+                        }
+                    }
+                } symbols: {
+                    ForEach(cloudConfigs) { cloud in
+                        Image("Nube")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: cloud.size)
+                            .tag(cloud.id)
+                    }
+                }
             }
         }
     }
