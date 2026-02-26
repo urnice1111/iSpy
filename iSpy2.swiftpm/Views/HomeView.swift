@@ -35,30 +35,24 @@ struct HomeView: View {
                         }
                         .frame(maxWidth: 280)
                         
-                        VStack(spacing: 8) {
-                            Image("RoadTrip")
-                                .resizable()
-                                .scaledToFit()
-                                .clipShape(RoundedRectangle(cornerRadius: 16))
-                                .shadow(radius: 10)
-                            
-                            Button {
-                                if hasActiveGame {
-                                    showGame = true
-                                } else {
-                                    showOnboarding = true
-                                }
-                            } label: {
-                                Text(hasActiveGame ? "Continue adventure!" : "Start adventure!")
-                                    .font(.custom("FredokaOne-Regular", size: 22))
-                                    .foregroundStyle(.white)
-                                    .padding(.horizontal, 32)
-                                    .padding(.vertical, 12)
-                                    .background(Capsule().fill(Color.orange))
-                                    .shadow(color: .orange.opacity(0.4), radius: 6, y: 4)
+                        Button {
+                            if hasActiveGame {
+                                showGame = true
+                            } else {
+                                showOnboarding = true
                             }
-                            .padding(.top, 4)
+                        } label: {
+                            ZStack(alignment: .bottom) {
+                                Image(hasActiveGame ? "road_trip_continue" : "road_trip_start")
+                                    .resizable()
+                                    .scaledToFit()
+
+
+                            }
+                            .clipShape(RoundedRectangle(cornerRadius: 16))
+                            .shadow(radius: 10)
                         }
+                        .buttonStyle(.plain)
                         .frame(maxWidth: 400)
                     }
                     .padding(.horizontal, 24)
