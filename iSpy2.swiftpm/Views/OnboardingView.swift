@@ -7,8 +7,6 @@ struct OnboardingView: View {
     @State private var selectedObjects: [GameObject] = []
     @Binding var popToRoot: Bool
     var gameState: GameState
-    var isGamePlaying: Bool = false
-    
     init(gameState: GameState, popToRoot: Binding<Bool>) {
         self.gameState = gameState
         self._popToRoot = popToRoot
@@ -35,14 +33,6 @@ struct OnboardingView: View {
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
             .indexViewStyle(.page(backgroundDisplayMode: .always))
-//            .overlay(alignment: .bottom) {
-//                if currentPage != 1 {
-//                    PageIndicator(count: 2, currentIndex: currentPage)
-//                        .padding(.bottom, 20)
-//                        .transition(.opacity)
-//                        .animation(.easeInOut, value: currentPage)
-//                }
-//            }
         }
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .tabBar)
@@ -260,28 +250,4 @@ struct ObjectCard: View {
     }
 }
 
-// MARK: - Page Indicator
-// This is for the little swipte to right text on the bottom of the onboarding view before
-// starting a new game.
-struct PageIndicator: View {
-    let count: Int
-    let currentIndex: Int
-    
-    var body: some View {
-        HStack(spacing: 8) {
-            ForEach(0..<count, id: \.self) { index in
-                Capsule()
-                    .fill(index == currentIndex ? Color.indigo : Color.secondary.opacity(0.3))
-                    .frame(width: index == currentIndex ? 24 : 8, height: 8)
-                    .animation(.spring(response: 0.3), value: currentIndex)
-            }
-        }
-        .padding(.vertical, 8)
-        .padding(.horizontal, 16)
-        .background(
-            Capsule()
-                .fill(.ultraThinMaterial)
-        )
-    }
-}
 

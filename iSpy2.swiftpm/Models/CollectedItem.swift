@@ -20,13 +20,6 @@ final class ImageCache: @unchecked Sendable {
         cache.setObject(image, forKey: key as NSString, cost: cost)
     }
     
-    func removeImage(forKey key: String) {
-        cache.removeObject(forKey: key as NSString)
-    }
-    
-    func clearAll() {
-        cache.removeAllObjects()
-    }
 }
 
 struct CollectedItem: Identifiable, Codable {

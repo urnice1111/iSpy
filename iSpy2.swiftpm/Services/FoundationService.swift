@@ -33,13 +33,8 @@ struct GeneratedQuiz {
 class AppleIntelligenceService {
     
     // MARK: - Properties
-    private var session: LanguageModelSession?
     var isGenerating: Bool = false
     var errorMessage: String?
-    
-    // Context for the current item
-    private var currentObjectName: String = ""
-    private var currentDescription: String = ""
     
     // MARK: - Availability Check
     
@@ -89,35 +84,12 @@ class AppleIntelligenceService {
     // MARK: - Errors
     enum AppleIntelligenceError: LocalizedError {
         case notAvailable
-        case generationFailed(String)
         
         var errorDescription: String? {
             switch self {
             case .notAvailable:
                 return "Apple Intelligence is not available on this device. Requires iPhone 15 Pro or newer, or M-series iPad."
-
-            case .generationFailed(let reason):
-                return "Failed to generate content: \(reason)"
             }
-        }
-    }
-    
-    // MARK: - Fallback for older iOS versions
-    /// Stub service for devices that don't support Apple Intelligence
-    @available(iOS 26.0, *)
-    @Observable
-    final class AppleIntelligenceServiceUnavailable: @unchecked Sendable {
-        @MainActor static let shared = AppleIntelligenceServiceUnavailable()
-        
-        var isGenerating: Bool = false
-        var errorMessage: String? = "Apple Intelligence requires iOS 26.0 or later"
-        
-        static var isAvailable: Bool { false }
-        
-        init() {}
-        
-        func generateQuizQuestions(for objectName: String) async throws -> [QuizQuestion] {
-            throw AppleIntelligenceError.notAvailable
         }
     }
 }

@@ -88,13 +88,6 @@ struct GameView: View {
         
     }
     
-    @ViewBuilder
-    private func cloudShape() -> some View {
-        Image(systemName: "cloud.fill")
-            .font(.system(size: 50))
-            .foregroundStyle(.white)
-    }
-    
     // MARK: - Objects List (right side card)
     
     @ViewBuilder
@@ -116,7 +109,7 @@ struct GameView: View {
                 ForEach(challenge.objectsToFind) { object in
                     let found = challenge.isObjectFound(object)
                     HStack(spacing: 10) {
-                        Image(ObjectStatusCard.assetName(for: object))
+                        Image(object.imageName)
                             .resizable()
                             .scaledToFit()
                             .frame(width: 44, height: 44)
@@ -324,7 +317,7 @@ struct GameView: View {
                 
                 let matched = challenge.objectsToFind.first { object in
                     !challenge.isObjectFound(object) &&
-                    (output.targetProbability[object.name] ?? 0) >= 0.5
+                    (output.targetProbability[object.name] ?? 0) >= 0.3
                 }
                 
                 DispatchQueue.main.async {
@@ -381,7 +374,7 @@ struct GameView: View {
                     let objects = challenge.objectsToFind
                     let idx = min(revealObjectIndex, objects.count - 1)
                     
-                    Image(ObjectStatusCard.assetName(for: objects[idx]))
+                    Image(objects[idx].imageName)
                         .resizable()
                         .scaledToFit()
                         .frame(width: 400)
@@ -395,7 +388,7 @@ struct GameView: View {
                 if animationPhase == .result {
                     if let obj = matchedObject {
                         VStack(spacing: 20) {
-                            Image(ObjectStatusCard.assetName(for: obj))
+                            Image(obj.imageName)
                                 .resizable()
                                 .scaledToFit()
                                 .frame(width: 180, height: 180)
@@ -667,53 +660,3 @@ class CameraViewController: UIViewController {
     }
 }
 
-// MARK: - Object Status Card
-
-struct ObjectStatusCard: View {
-    let object: GameObject
-    let isFound: Bool
-    
-    static func assetName(for object: GameObject) -> String {
-        switch object.name {
-        case "Traffic Cone": return "trafficcone"
-        case "Fire Hydrant": return "firehydrant"
-        case "Bicycle": return "bicycle"
-        case "Bus Stop": return "busstop"
-        case "Traffic Light": return "trafficlight"
-        case "Stop Sign": return "stopsign"
-        case "Wind Turbine": return "windturbine"
-        case "Electric Tower": return "electrictower"
-        case "Traffic Sign": return "trafficsign"
-        case "Construction Crane": return "crane"
-        case "Gas Station Price Board": return "gasprices"
-        case "Police Car": return "policecar"
-        case "Ambulance": return "ambulance"
-        case "Tractor": return "tractor"
-        case "Church": return "church"
-        default: return "questionmark.circle"
-        }
-    }
-    
-    var body: some View {
-        HStack(spacing: 10) {
-            Image(Self.assetName(for: object))
-                .resizable()
-                .scaledToFit()
-                .frame(width: 44, height: 44)
-            
-            Spacer()
-            
-            ZStack {
-                RoundedRectangle(cornerRadius: 6)
-                    .stroke(isFound ? Color.green : Color.gray.opacity(0.4), lineWidth: 2)
-                    .frame(width: 26, height: 26)
-                
-                if isFound {
-                    Image(systemName: "checkmark")
-                        .font(.system(size: 16, weight: .bold))
-                        .foregroundStyle(.green)
-                }
-            }
-        }
-    }
-}

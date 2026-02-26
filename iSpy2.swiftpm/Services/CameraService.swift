@@ -37,8 +37,6 @@ final class CameraService: NSObject, ObservableObject, @unchecked Sendable {
         }
     }
 
-    func resetZoom() { setZoom(factor: 1.0) }
-
     private var isSessionRunning = false
     private var isConfigured = false
 

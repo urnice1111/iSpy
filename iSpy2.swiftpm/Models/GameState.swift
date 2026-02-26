@@ -61,16 +61,6 @@ class GameState {
         saveState()
     }
     
-    func cancelChallenge() {
-        currentChallenge = nil
-        saveState()
-    }
-    
-    func updateChallengeTitle(_ challengeId: UUID, title: String) {
-        challengeTitles[challengeId.uuidString] = title
-        saveState()
-    }
-    
     func saveState() {
         let challenge = currentChallenge
         let items = collectedItems
@@ -140,27 +130,6 @@ class GameState {
         }
     }
     
-    func resetGame() {
-        currentChallenge = nil
-        collectedItems = []
-        totalScore = 0
-        completedChallengesCount = 0
-        challengeTitles = [:]
-        purchasedStickerIds = []
-        saveState()
-    }
-    
-    /// Update the AI-generated description for a collected item
-    /// - Parameters:
-    ///   - itemId: The UUID of the item to update
-    ///   - description: The AI-generated description to save
-    func updateItemDescription(_ itemId: UUID, description: String) {
-        if let index = collectedItems.firstIndex(where: { $0.id == itemId }) {
-            collectedItems[index].aiDescription = description
-            saveState()
-        }
-    }
-    
     /// Add quiz bonus points for a collected item (one-time per item)
     /// - Parameters:
     ///   - itemId: The UUID of the item
@@ -171,16 +140,6 @@ class GameState {
         
         collectedItems[index].quizBonusPoints = bonusPoints
         totalScore += bonusPoints
-        saveState()
-    }
-    
-    /// Reset quiz for a collected item (debug only) - subtracts previous bonus and clears quiz state
-    func resetQuiz(itemId: UUID) {
-        guard let index = collectedItems.firstIndex(where: { $0.id == itemId }) else { return }
-        if let previousBonus = collectedItems[index].quizBonusPoints {
-            totalScore = max(0, totalScore - previousBonus)
-        }
-        collectedItems[index].quizBonusPoints = nil
         saveState()
     }
     

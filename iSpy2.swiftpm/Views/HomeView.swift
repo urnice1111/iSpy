@@ -72,14 +72,6 @@ struct HomeView: View {
     }
 }
 
-// MARK: - Adventure Card
-
-struct AdventureCard: View {
-    var body: some View {
-        
-    }
-}
-
 // MARK: - About Widget
 
 struct AboutWidget: View {
@@ -156,40 +148,3 @@ struct PointsWidget: View {
     }
 }
 
-struct StatsWidget: View {
-    let value: String
-    let label: String
-    let icon: String
-    
-    var body: some View {
-        VStack(spacing: 6) {
-            Image(icon)
-                .resizable()
-                .scaledToFit()
-                .frame(width: 50, height: 50)
-            
-            Text(value)
-                .font(.custom("FredokaOne-Regular", size: 36))
-                .foregroundStyle(.black)
-            
-            Text(label)
-                .font(.custom("FredokaOne-Regular", size: 14))
-                .foregroundStyle(Color("StatsText"))
-                .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-        .padding(12)
-        .frame(maxWidth: .infinity, minHeight: 140, maxHeight: 140)
-        .background(
-            ZStack {
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(Color("ColorOffset"))
-                    .shadow(color: .black.opacity(0.4), radius: 6, y: 3)
-                    .offset(y: 5)
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(.white)
-                    .shadow(color: .black.opacity(0.4), radius: 6, y: 3)
-            }
-        )
-    }
-}

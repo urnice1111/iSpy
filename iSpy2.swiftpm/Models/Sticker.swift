@@ -4,9 +4,7 @@ import SwiftUI
 struct StickerDefinition: Identifiable, Codable, Hashable {
     let id: String
     let imageName: String
-    let displayName: String
     let price: Int
-    let category: String
 }
 
 struct PlacedSticker: Identifiable, Codable {
@@ -35,23 +33,23 @@ struct PlacedSticker: Identifiable, Codable {
 struct StickerCatalog {
     static let all: [StickerDefinition] = [
         // Easy tier — 5 points
-        StickerDefinition(id: "s_trafficcone", imageName: "trafficcone", displayName: "Traffic Cone", price: 5, category: "Road"),
-        StickerDefinition(id: "s_firehydrant", imageName: "firehydrant", displayName: "Fire Hydrant", price: 5, category: "Urban"),
-        StickerDefinition(id: "s_trafficlight", imageName: "trafficlight", displayName: "Traffic Light", price: 5, category: "Road"),
-        StickerDefinition(id: "s_stopsign", imageName: "stopsign", displayName: "Stop Sign", price: 5, category: "Road"),
-        StickerDefinition(id: "s_foundit", imageName: "foundit_sticker", displayName: "Found It", price: 5, category: "Road"),
-        StickerDefinition(id: "s_wow", imageName: "wow_sticker", displayName: "WOW", price: 5, category: "Road"),
-        StickerDefinition(id: "s_glasses", imageName: "glasses_sticker", displayName: "Sun Glasses", price: 5, category: "Road"),
+        StickerDefinition(id: "s_trafficcone", imageName: "trafficcone", price: 5),
+        StickerDefinition(id: "s_firehydrant", imageName: "firehydrant", price: 5),
+        StickerDefinition(id: "s_trafficlight", imageName: "trafficlight", price: 5),
+        StickerDefinition(id: "s_stopsign", imageName: "stopsign", price: 5),
+        StickerDefinition(id: "s_foundit", imageName: "foundit_sticker", price: 5),
+        StickerDefinition(id: "s_wow", imageName: "wow_sticker", price: 5),
+        StickerDefinition(id: "s_glasses", imageName: "glasses_sticker", price: 5),
         // Medium tier — 10 points
-        StickerDefinition(id: "s_windturbine", imageName: "windturbine", displayName: "Wind Turbine", price: 10, category: "Energy"),
-        StickerDefinition(id: "s_sun", imageName: "sun_sticker", displayName: "Sun", price: 10, category: "Energy"),
-        StickerDefinition(id: "s_electrictower", imageName: "electrictower", displayName: "Electric Tower", price: 10, category: "Infrastructure"),
-        StickerDefinition(id: "s_rainbow", imageName: "rainbow_sticker", displayName: "Rainbow", price: 10, category: "Energy"),
+        StickerDefinition(id: "s_windturbine", imageName: "windturbine", price: 10),
+        StickerDefinition(id: "s_sun", imageName: "sun_sticker", price: 10),
+        StickerDefinition(id: "s_electrictower", imageName: "electrictower", price: 10),
+        StickerDefinition(id: "s_rainbow", imageName: "rainbow_sticker", price: 10),
         // Hard tier — 15 points
-        StickerDefinition(id: "s_certified", imageName: "certified_sticker", displayName: "Certified Explorer", price: 15, category: "Emergency"),
+        StickerDefinition(id: "s_certified", imageName: "certified_sticker", price: 15),
         // Bonus decorations using existing assets
-        StickerDefinition(id: "s_star", imageName: "Star", displayName: "Star", price: 3, category: "Decoration"),
-        StickerDefinition(id: "s_flag", imageName: "flag", displayName: "Flag", price: 3, category: "Decoration"),
-        StickerDefinition(id: "s_nube", imageName: "Nube", displayName: "Cloud", price: 3, category: "Decoration"),
+        StickerDefinition(id: "s_star", imageName: "Star", price: 3),
+        StickerDefinition(id: "s_flag", imageName: "flag", price: 3),
+        StickerDefinition(id: "s_nube", imageName: "Nube", price: 3),
     ]
 }
