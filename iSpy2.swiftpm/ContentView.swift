@@ -1,4 +1,5 @@
 import SwiftUI
+import TipKit
 
 @available(iOS 26.0, *)
 struct ContentView: View {
@@ -35,6 +36,11 @@ struct ContentView: View {
             set: { if !$0 { hasSeenAbout = true } }
         )) {
             AboutView()
+        }
+        .onChange(of: hasSeenAbout) { _, seen in
+            if seen {
+                Task { await StartAdventureTip.aboutDismissed.donate() }
+            }
         }
     }
 }

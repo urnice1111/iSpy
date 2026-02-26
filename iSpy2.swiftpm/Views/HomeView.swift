@@ -1,4 +1,26 @@
 import SwiftUI
+import TipKit
+
+@available(iOS 17.0, *)
+struct StartAdventureTip: Tip {
+    static let aboutDismissed = Event(id: "aboutDismissed")
+    
+    var title: Text {
+        Text("Start Your First Adventure!")
+    }
+    
+    var message: Text? {
+        Text("Tap here to begin a new mission and find hidden objects on your trip!")
+    }
+    
+    var image: Image? {
+        Image(systemName: "map.fill")
+    }
+    
+    var rules: [Rule] {
+        #Rule(Self.aboutDismissed) { $0.donations.count >= 1 }
+    }
+}
 
 @available(iOS 17.0, *)
 struct HomeView: View {
@@ -6,6 +28,7 @@ struct HomeView: View {
     @State private var showOnboarding = false
     @State private var showGame = false
     @Environment(GameState.self) var gameState
+    private let adventureTip = StartAdventureTip()
 
     private var hasActiveGame: Bool {
         guard let challenge = gameState.currentChallenge else { return false }
@@ -54,6 +77,7 @@ struct HomeView: View {
                         }
                         .buttonStyle(.plain)
                         .frame(maxWidth: 400)
+                        .popoverTip(adventureTip, arrowEdge: .leading)
                     }
                     .padding(.horizontal, 24)
                     

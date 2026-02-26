@@ -77,11 +77,11 @@ struct InstructionsSlide: View {
                 
                 HStack(spacing: 6) {
                     Text("Swipe to continue")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .font(.custom("FredokaOne-Regular", size: 50 * scale))
+                        .foregroundStyle(Color("StatsText"))
                     Image(systemName: "chevron.right")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .font(.custom("FredokaOne-Regular", size: 20 * scale))
+                        .foregroundStyle(Color("StatsText"))
                 }
                 .padding(.bottom, 40 * scale)
             }

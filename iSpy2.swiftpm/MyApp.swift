@@ -1,6 +1,7 @@
 import SwiftUI
 import CoreText
 import CoreGraphics
+import TipKit
 
 @available(iOS 26.0, *)
 class AppDelegate: NSObject, UIApplicationDelegate {
@@ -16,6 +17,9 @@ struct MyApp: App {
 
     init() {
         Self.registerCustomFonts()
+        try? Tips.configure([
+            .displayFrequency(.immediate)
+        ])
     }
 
     var body: some Scene {
