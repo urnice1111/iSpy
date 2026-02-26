@@ -317,7 +317,7 @@ struct GameView: View {
                 
                 let matched = challenge.objectsToFind.first { object in
                     !challenge.isObjectFound(object) &&
-                    (output.targetProbability[object.name] ?? 0) >= 0.3
+                    (output.targetProbability[object.name] ?? 0) >= 0.45
                 }
                 
                 DispatchQueue.main.async {
