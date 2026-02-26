@@ -261,6 +261,11 @@ struct GameView: View {
             stopTimer()
             gameState.isCameraActive = false
         }
+        .onChange(of: cameraService.isReady) { _, ready in
+            if ready {
+                cameraService.startSession()
+            }
+        }
         .onChange(of: cameraService.isTaken) { _, taken in
             if taken {
                 processCapture()
@@ -599,6 +604,19 @@ class CameraViewController: UIViewController {
         layer.videoGravity = .resizeAspectFill
         view.layer.addSublayer(layer)
         previewLayer = layer
+        
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(sessionDidStartRunning),
+            name: .AVCaptureSessionDidStartRunning,
+            object: camera.session
+        )
+    }
+    
+    @objc private func sessionDidStartRunning() {
+        DispatchQueue.main.async { [weak self] in
+            self?.applyRotation()
+        }
     }
     
     override func viewDidAppear(_ animated: Bool) {
@@ -643,6 +661,7 @@ class CameraViewController: UIViewController {
     
     override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
+        NotificationCenter.default.removeObserver(self, name: .AVCaptureSessionDidStartRunning, object: camera.session)
         previewLayer?.removeFromSuperlayer()
         previewLayer = nil
     }
