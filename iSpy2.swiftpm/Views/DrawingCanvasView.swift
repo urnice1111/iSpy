@@ -30,7 +30,7 @@ struct DrawingCanvasView: UIViewRepresentable {
         if isErasing {
             canvas.tool = PKEraserTool(.vector)
         } else {
-            canvas.tool = PKInkingTool(.pen, color: inkColor, width: 5)
+            canvas.tool = PKInkingTool(.pen, color: inkColor, width: 15)
         }
     }
     

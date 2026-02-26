@@ -37,21 +37,18 @@ struct StickerCatalog {
         // Easy tier — 5 points
         StickerDefinition(id: "s_trafficcone", imageName: "trafficcone", displayName: "Traffic Cone", price: 5, category: "Road"),
         StickerDefinition(id: "s_firehydrant", imageName: "firehydrant", displayName: "Fire Hydrant", price: 5, category: "Urban"),
-        StickerDefinition(id: "s_bicycle", imageName: "bicycle", displayName: "Bicycle", price: 5, category: "Vehicle"),
-        StickerDefinition(id: "s_busstop", imageName: "busstop", displayName: "Bus Stop", price: 5, category: "Urban"),
         StickerDefinition(id: "s_trafficlight", imageName: "trafficlight", displayName: "Traffic Light", price: 5, category: "Road"),
         StickerDefinition(id: "s_stopsign", imageName: "stopsign", displayName: "Stop Sign", price: 5, category: "Road"),
+        StickerDefinition(id: "s_foundit", imageName: "foundit_sticker", displayName: "Found It", price: 5, category: "Road"),
+        StickerDefinition(id: "s_wow", imageName: "wow_sticker", displayName: "WOW", price: 5, category: "Road"),
+        StickerDefinition(id: "s_glasses", imageName: "glasses_sticker", displayName: "Sun Glasses", price: 5, category: "Road"),
         // Medium tier — 10 points
         StickerDefinition(id: "s_windturbine", imageName: "windturbine", displayName: "Wind Turbine", price: 10, category: "Energy"),
+        StickerDefinition(id: "s_sun", imageName: "sun_sticker", displayName: "Sun", price: 10, category: "Energy"),
         StickerDefinition(id: "s_electrictower", imageName: "electrictower", displayName: "Electric Tower", price: 10, category: "Infrastructure"),
-        StickerDefinition(id: "s_trafficsign", imageName: "trafficsign", displayName: "Traffic Sign", price: 10, category: "Road"),
-        StickerDefinition(id: "s_crane", imageName: "crane", displayName: "Crane", price: 10, category: "Construction"),
-        StickerDefinition(id: "s_gasprices", imageName: "gasprices", displayName: "Gas Station", price: 10, category: "Urban"),
+        StickerDefinition(id: "s_rainbow", imageName: "rainbow_sticker", displayName: "Rainbow", price: 10, category: "Energy"),
         // Hard tier — 15 points
-        StickerDefinition(id: "s_policecar", imageName: "policecar", displayName: "Police Car", price: 15, category: "Emergency"),
-        StickerDefinition(id: "s_ambulance", imageName: "ambulance", displayName: "Ambulance", price: 15, category: "Emergency"),
-        StickerDefinition(id: "s_tractor", imageName: "tractor", displayName: "Tractor", price: 15, category: "Farm"),
-        StickerDefinition(id: "s_church", imageName: "church", displayName: "Church", price: 15, category: "Urban"),
+        StickerDefinition(id: "s_certified", imageName: "certified_sticker", displayName: "Certified Explorer", price: 15, category: "Emergency"),
         // Bonus decorations using existing assets
         StickerDefinition(id: "s_star", imageName: "Star", displayName: "Star", price: 3, category: "Decoration"),
         StickerDefinition(id: "s_flag", imageName: "flag", displayName: "Flag", price: 3, category: "Decoration"),

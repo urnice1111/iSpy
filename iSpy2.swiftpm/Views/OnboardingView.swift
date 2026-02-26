@@ -35,14 +35,14 @@ struct OnboardingView: View {
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
             .indexViewStyle(.page(backgroundDisplayMode: .always))
-            .overlay(alignment: .bottom) {
-                if currentPage != 1 {
-                    PageIndicator(count: 2, currentIndex: currentPage)
-                        .padding(.bottom, 20)
-                        .transition(.opacity)
-                        .animation(.easeInOut, value: currentPage)
-                }
-            }
+//            .overlay(alignment: .bottom) {
+//                if currentPage != 1 {
+//                    PageIndicator(count: 2, currentIndex: currentPage)
+//                        .padding(.bottom, 20)
+//                        .transition(.opacity)
+//                        .animation(.easeInOut, value: currentPage)
+//                }
+//            }
         }
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .tabBar)
