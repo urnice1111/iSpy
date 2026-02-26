@@ -120,7 +120,7 @@ final class CameraService: NSObject, ObservableObject, @unchecked Sendable {
         if Thread.isMainThread {
             doStop()
         } else {
-            DispatchQueue.main.async(execute: doStop)
+            DispatchQueue.main.async { doStop() }
         }
     }
 

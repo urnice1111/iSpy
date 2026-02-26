@@ -309,9 +309,10 @@ struct GameView: View {
         cameraService.reTake()
         startCaptureAnimation()
         
+        nonisolated(unsafe) let model = mlModel
         DispatchQueue.global(qos: .userInitiated).async {
             do {
-                guard let model = mlModel else { return }
+                guard let model else { return }
                 let input = try MultiLabelModelInput(imageWith: cgImage)
                 let output = try model.prediction(input: input)
                 
