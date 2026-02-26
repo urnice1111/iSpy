@@ -477,7 +477,7 @@ struct DraggableStickerView: View {
                 }
                 .onEnded { value in
                     var updated = sticker
-                    updated.scale = max(0.3, min(3.0, sticker.scale * value))
+                    updated.scale = max(0.2, sticker.scale * value)
                     currentScale = 1.0
                     onUpdate(updated)
                 },

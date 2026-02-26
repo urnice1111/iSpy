@@ -89,31 +89,38 @@ struct AdventureCard: View {
 // MARK: - About Widget
 
 struct AboutWidget: View {
+    @State private var showAbout = false
+    
     var body: some View {
-        HStack(spacing: 8) {
-            Image("profile_icon")
-                .resizable()
-                .scaledToFit()
-                .frame(width: 80, height: 80)
-            
-            Text("About")
-                .font(.custom("FredokaOne-Regular", size: 36))
-                .foregroundStyle(.black)
-        }
-        .padding(12)
-        .frame(maxWidth: .infinity)
-        .background(
-            ZStack {
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(Color("ColorOffset"))
-                    .shadow(color: .black.opacity(0.4), radius: 6, y: 3)
-                    .offset(y: 5)
+        Button { showAbout = true } label: {
+            HStack(spacing: 8) {
+                Image("profile_icon")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 80, height: 80)
                 
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(.white)
-                    .shadow(color: .black.opacity(0.4), radius: 6, y: 3)
+                Text("About")
+                    .font(.custom("FredokaOne-Regular", size: 36))
+                    .foregroundStyle(.black)
             }
-        )
+            .padding(12)
+            .frame(maxWidth: .infinity)
+            .background(
+                ZStack {
+                    RoundedRectangle(cornerRadius: 16)
+                        .fill(Color("ColorOffset"))
+                        .shadow(color: .black.opacity(0.4), radius: 6, y: 3)
+                        .offset(y: 5)
+                    
+                    RoundedRectangle(cornerRadius: 16)
+                        .fill(.white)
+                        .shadow(color: .black.opacity(0.4), radius: 6, y: 3)
+                }
+            )
+        }
+        .sheet(isPresented: $showAbout) {
+            AboutView()
+        }
     }
 }
 

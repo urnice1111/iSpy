@@ -5,6 +5,7 @@ struct ContentView: View {
     
     @State private var gameState = GameState()
     @State private var selectedTab: Int = 0
+    @AppStorage("hasSeenAbout") private var hasSeenAbout = false
     
     var body: some View {
         HStack(spacing: 0) {
@@ -29,6 +30,12 @@ struct ContentView: View {
         .animation(.easeInOut(duration: 0.25), value: gameState.isCameraActive)
         .animation(.easeInOut(duration: 0.25), value: gameState.isFullScreenActive)
         .environment(gameState)
+        .sheet(isPresented: Binding(
+            get: { !hasSeenAbout },
+            set: { if !$0 { hasSeenAbout = true } }
+        )) {
+            AboutView()
+        }
     }
 }
 
