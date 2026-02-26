@@ -1,6 +1,6 @@
 import Foundation
 
-enum Difficulty: String, Codable, CaseIterable {
+enum Difficulty: String, Codable {
     case easy
     case medium
     case hard
@@ -17,6 +17,29 @@ enum Difficulty: String, Codable, CaseIterable {
 struct GameObject: Identifiable, Codable, Hashable {
     let id: UUID
     let name: String
+    var imageName: String {
+        switch name{
+            
+            case "Traffic Cone": return "trafficcone"
+            case "Fire Hydrant": return "firehydrant"
+            case "Bicycle": return "bicycle"
+            case "Bus Stop": return "busstop"
+            case "Traffic Light": return "trafficlight"
+            case "Stop Sign": return "stopsign"
+            case "Wind Turbine": return "windturbine"
+            case "Electric Tower": return "electrictower"
+            case "Traffic Sign": return "trafficsign"
+            case "Construction Crane": return "crane"
+            case "Gas Station Price Board": return "gasprices"
+            case "Police Car": return "policecar"
+            case "Ambulance": return "ambulance"
+            case "Tractor": return "tractor"
+            case "Church": return "church"
+            case "Bridge": return "bridge"
+            default: return "questionmark.circle"
+            
+        }
+    }
     let category: String
     let difficulty: Difficulty
     var points: Int { difficulty.points }
@@ -36,19 +59,17 @@ struct ObjectDatabase {
         GameObject(name: "Traffic Cone", category: "Road", difficulty: .easy), //listo down
         GameObject(name: "Fire Hydrant", category: "Urban", difficulty: .easy), //listo down
         GameObject(name: "Bicycle", category: "Vehicle", difficulty: .easy), //listo down
-        GameObject(name: "Bus Stop", category: "Urban", difficulty: .easy), //listo downloaded splitted
+/*        GameObject(name: "Bus Stop", category: "Urban", difficulty: .easy),*/ //listo downloaded splitted
         GameObject(name: "Traffic Light", category: "Road", difficulty: .easy), //listo down splitted
         GameObject(name: "Stop Sign", category: "Road", difficulty: .easy), //listo down
 
-        // --- MEDIUM (Requieren más atención al entorno) ---
+//         --- MEDIUM (Requieren más atención al entorno) ---
         GameObject(name: "Wind Turbine", category: "Energy", difficulty: .medium), //listo down
         GameObject(name: "Electric Tower", category: "Infrastructure", difficulty: .medium), //listo down
         GameObject(name: "Traffic Sign", category: "Road", difficulty: .medium), //listo down
         GameObject(name: "Construction Crane", category: "Construction", difficulty: .medium), //listo down
         GameObject(name: "Gas Station Price Board", category: "Urban", difficulty: .medium), //listo down
-//        GameObject(name: "Bridge", category: "Infrastructure", difficulty: .medium),
-
-        // --- HARD (Objetos en movimiento o menos frecuentes) ---
+//         --- HARD (Objetos en movimiento o menos frecuentes) ---
         GameObject(name: "Police Car", category: "Emergency", difficulty: .hard), //listo down
         GameObject(name: "Ambulance", category: "Emergency", difficulty: .hard), //listo
         GameObject(name: "Tractor", category: "Farm", difficulty: .hard), //listo

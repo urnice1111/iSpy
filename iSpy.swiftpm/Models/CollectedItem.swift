@@ -2,18 +2,13 @@ import Foundation
 import SwiftUI
 import UIKit
 
-// MARK: - Image Cache
-/// Singleton cache for collected item images to avoid repeated disk reads
-/// NSCache is thread-safe, so we can mark this as @unchecked Sendable (Apples amazing)
 final class ImageCache: @unchecked Sendable {
     static let shared = ImageCache()
-    
     private let cache = NSCache<NSString, UIImage>()
     
     private init() {
-        // Limit cache to ~50MB or 20 images
-        cache.totalCostLimit = 50 * 1024 * 1024
-        cache.countLimit = 20
+        cache.countLimit = 100
+        cache.totalCostLimit = 50 * 1024 * 1024 // 50 MB
     }
     
     func image(forKey key: String) -> UIImage? {
@@ -21,29 +16,24 @@ final class ImageCache: @unchecked Sendable {
     }
     
     func setImage(_ image: UIImage, forKey key: String) {
-        let cost = image.jpegData(compressionQuality: 1.0)?.count ?? 0
+        let cost = Int(image.size.width * image.size.height * image.scale * 4)
         cache.setObject(image, forKey: key as NSString, cost: cost)
     }
     
-    func removeImage(forKey key: String) {
-        cache.removeObject(forKey: key as NSString)
-    }
-    
-    func clearCache() {
-        cache.removeAllObjects()
-    }
 }
 
 struct CollectedItem: Identifiable, Codable {
     let id: UUID
     let object: GameObject
-    let imagePath: String?  // Store path instead of data
+    let imagePath: String?
     let timestamp: Date
     let challengeId: UUID
-    var aiDescription: String?  // AI-generated description (cached, deprecated)
-    var quizBonusPoints: Int?  // Bonus points from quiz (nil = not completed)
+    var aiDescription: String?
+    var quizBonusPoints: Int?
+    var drawingData: Data?
+    var placedStickers: [PlacedSticker]
     
-    init(id: UUID = UUID(), object: GameObject, imagePath: String?, timestamp: Date = Date(), challengeId: UUID, aiDescription: String? = nil, quizBonusPoints: Int? = nil) {
+    init(id: UUID = UUID(), object: GameObject, imagePath: String? = nil, timestamp: Date = Date(), challengeId: UUID, aiDescription: String? = nil, quizBonusPoints: Int? = nil, drawingData: Data? = nil, placedStickers: [PlacedSticker] = []) {
         self.id = id
         self.object = object
         self.imagePath = imagePath
@@ -51,6 +41,8 @@ struct CollectedItem: Identifiable, Codable {
         self.challengeId = challengeId
         self.aiDescription = aiDescription
         self.quizBonusPoints = quizBonusPoints
+        self.drawingData = drawingData
+        self.placedStickers = placedStickers
     }
     
     var image: Image? {

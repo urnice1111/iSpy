@@ -7,8 +7,6 @@ struct OnboardingView: View {
     @State private var selectedObjects: [GameObject] = []
     @Binding var popToRoot: Bool
     var gameState: GameState
-    var isGamePlaying: Bool = false
-    
     init(gameState: GameState, popToRoot: Binding<Bool>) {
         self.gameState = gameState
         self._popToRoot = popToRoot
@@ -17,25 +15,25 @@ struct OnboardingView: View {
     
     var body: some View {
         ZStack {
+            
+            Image("BackgroundOnboarding")
+                .resizable()
+                .ignoresSafeArea()
+            
             TabView(selection: $currentPage) {
-                // Slide 1: How to Play
+                // How to play
                 InstructionsSlide()
                     .tag(0)
                 
-                AvoidView()
-                    .tag(1)
-                // Slide 2: Objects to Find
+                
+                // Objects to find
                 ObjectsSlide(objects: selectedObjects, gameState: gameState, popToRoot: $popToRoot)
-                    .tag(2)
+                    .tag(1)
+
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
             .indexViewStyle(.page(backgroundDisplayMode: .always))
-            .overlay(alignment: .bottom) {
-                PageIndicator(count: 2, currentIndex: currentPage)
-                    .padding(.bottom, 20)
-            }
         }
-        .background(Color(.systemGroupedBackground))
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .tabBar)
     }
@@ -44,143 +42,73 @@ struct OnboardingView: View {
 // MARK: - Instructions Slide
 struct InstructionsSlide: View {
     var body: some View {
-        VStack(spacing: 32) {
-            Spacer()
+        GeometryReader { geo in
+            let h = geo.size.height
+            let w = geo.size.width
             
-            // Header with icon
-            VStack(spacing: 20) {
-                ZStack {
-                    Circle()
-                        .fill(Color.indigo.opacity(0.15))
-                        .frame(width: 120, height: 120)
-                    
-                    Image(systemName: "camera.viewfinder")
-                        .font(.system(size: 50))
-                        .foregroundStyle(.indigo)
-                }
+            // This scale was gotten from testing on canvas with a big iPad, and then test in my mini iPad
+            let scale = min(w / 1200, h / 900)
+            
+            VStack(spacing: 24 * scale) {
+                Spacer()
                 
-                Text("How to Play")
-                    .font(.largeTitle)
-                    .fontWeight(.bold)
-                    .foregroundStyle(.primary)
+                Text("How to play!")
+                    .font(.custom("FredokaOne-Regular", size: 130 * scale))
+                    .foregroundStyle(Color("Title"))
+                    .shadow(color: .black.opacity(0.15), radius: 2, y: 2)
+                    .padding(.top, 16 * scale)
+                    .padding(.bottom, 60 * scale)
+                
+                VStack(spacing: 22 * scale) {
+                    InstructionRow(text: "Find 6 fun objects on your trip!", icon: "magnifier_icon", scale: scale)
+                    InstructionRow(text: "Snap photos of them!", icon: "camera_icon", scale: scale)
+                    InstructionRow(text: "Finish in 30 minutes!", icon: "clock_icon", scale: scale)
+                    InstructionRow(text: "Earn stars for each one!", icon: "Star", scale: scale)
+                }
+                .padding(30 * scale)
+                .frame(maxWidth: 1000 * scale, alignment: .center)
+                .padding(.horizontal, 50)
+                .background(
+                    RoundedRectangle(cornerRadius: 40 * scale)
+                        .fill(.white)
+                )
+                
+                Spacer()
+                
+                HStack(spacing: 6) {
+                    Text("Swipe to continue")
+                        .font(.custom("FredokaOne-Regular", size: 50 * scale))
+                        .foregroundStyle(Color("StatsText"))
+                    Image(systemName: "chevron.right")
+                        .font(.custom("FredokaOne-Regular", size: 20 * scale))
+                        .foregroundStyle(Color("StatsText"))
+                }
+                .padding(.bottom, 40 * scale)
             }
-            
-            // Instructions list
-            VStack(alignment: .leading, spacing: 16) {
-                InstructionRow(
-                    number: 1,
-                    text: "Find 6 objects during your road trip",
-                    icon: "magnifyingglass"
-                )
-                InstructionRow(
-                    number: 2,
-                    text: "Take photos of each object you spot",
-                    icon: "camera.fill"
-                )
-                InstructionRow(
-                    number: 3,
-                    text: "Complete the challenge in 30 minutes",
-                    icon: "clock.fill"
-                )
-                InstructionRow(
-                    number: 4,
-                    text: "Earn points for each object found",
-                    icon: "star.fill"
-                )
-            }
-            .padding(24)
-            .background(
-                RoundedRectangle(cornerRadius: 20)
-                    .fill(Color(.secondarySystemGroupedBackground))
-            )
-            .padding(.horizontal, 24)
-            
-            Spacer()
-            
-            // Swipe hint
-            HStack(spacing: 6) {
-                Text("Swipe to continue")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                Image(systemName: "chevron.right")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-            .padding(.bottom, 60)
+            .frame(width: w, height: h)
         }
-    }
-}
-// MARK: - Avoid View
-struct AvoidView: View {
-    var body: some View {
-        VStack(spacing: 32){
-            
-            Spacer()
-            
-            Image(systemName: "exclamationmark.triangle")
-                .font(.system(size: 90))
-                .foregroundStyle(
-                    Color.yellow
-                )
-            
-            Text("Safety first!")
-                .font(.largeTitle)
-                .fontWeight(.bold)
-                .foregroundStyle(.primary)
-            
-            Text("Do not use this app while driving. Always stay alert and aware of your surroundings.")
-                .font(.body)
-                .foregroundStyle(.primary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 30)
-            
-            Spacer()
-            
-            // Swipe hint
-            HStack(spacing: 6) {
-                Text("Swipe to continue")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                Image(systemName: "chevron.right")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-            .padding(.bottom, 60)
-        }
-        
-        
     }
 }
 
 // MARK: - Instruction Row
 struct InstructionRow: View {
-    let number: Int
     let text: String
     let icon: String
+    var scale: CGFloat
     
     var body: some View {
-        HStack(spacing: 16) {
-            // Number badge
-            ZStack {
-                Circle()
-                    .fill(Color.indigo)
-                    .frame(width: 36, height: 36)
-                
-                Text("\(number)")
-                    .font(.headline)
-                    .fontWeight(.bold)
-                    .foregroundStyle(.white)
-            }
+        HStack(alignment: .center, spacing: 36 * scale) {
+            Image(icon)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 70 * scale, height: 70 * scale)
+                .frame(width: 70 * scale, alignment: .leading)
             
             Text(text)
-                .font(.body)
-                .foregroundStyle(.primary)
-            
-            Spacer()
-            
-            Image(systemName: icon)
-                .font(.body)
-                .foregroundStyle(.secondary)
+                .font(.custom("FredokaOne-Regular", size: 50 * scale))
+                .foregroundStyle(Color("StatsText"))
+                .multilineTextAlignment(.leading)
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 }
@@ -193,46 +121,65 @@ struct ObjectsSlide: View {
     @State private var navigateToGame = false
     @Environment(\.dismiss) var dismiss
     @Binding var popToRoot: Bool
-    
+
     var body: some View {
-        VStack(spacing: 24) {
-            // Header
-            VStack(spacing: 8) {
-                Text("Your Mission")
-                    .font(.largeTitle)
-                    .fontWeight(.bold)
-                    .foregroundStyle(.primary)
+        GeometryReader { geo in
+            let h = geo.size.height
+            let w = geo.size.width
+            let scale = min(w / 1200, h / 900)
+
+            let columns = [
+                GridItem(.flexible(), spacing: 14 * scale),
+                GridItem(.flexible(), spacing: 14 * scale)
+            ]
+
+            VStack(spacing: 16 * scale) {
+                VStack(spacing: 2 * scale) {
+                    Text("Your Mission")
+                        .font(.custom("FredokaOne-Regular", size: 100 * scale))
+                        .foregroundStyle(Color("Title"))
+                        .shadow(color: .black.opacity(0.15), radius: 2, y: 2)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.5)
+
+                    Text("Find these \(objects.count) objects")
+                        .font(.custom("FredokaOne-Regular", size: 40 * scale))
+                        .foregroundStyle(.white)
+                        .shadow(color: .black.opacity(0.2), radius: 2, y: 1)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.5)
+                }
+                .padding(.vertical, 70 * scale)
                 
-                Text("Find these \(objects.count) objects")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
-            .padding(.top, 20)
-            
-            // Objects list
-            ScrollView {
-                VStack(spacing: 12) {
-                    ForEach(objects) { object in
-                        ObjectCard(object: object)
+
+                LazyVGrid(columns: columns, spacing: 12 * scale) {
+                    ForEach(objects, id: \.self) { object in
+                        ObjectCard(object: object, scale: scale)
                     }
                 }
-                .padding(.horizontal, 24)
+                .frame(maxWidth: 900 * scale)
+
+                Spacer()
+
+                Button {
+                    gameState.startChallenge(objects: objects)
+                    navigateToGame = true
+                } label: {
+                    HStack(spacing: 8) {
+                        Text("Start Adventure!")
+                            .font(.custom("FredokaOne-Regular", size: 28 * scale))
+                        Image(systemName: "arrow.right")
+                            .font(.system(size: 18 * scale, weight: .bold))
+                    }
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 40 * scale)
+                    .padding(.vertical, 14 * scale)
+                    .background(Capsule().fill(Color.orange))
+                    .shadow(color: .orange.opacity(0.4), radius: 6, y: 4)
+                }
+                .padding(.bottom, 50 * scale)
             }
-            
-            // Start button
-            Button {
-                gameState.startChallenge(objects: objects)
-                navigateToGame = true
-            } label: {
-                Text("Start Adventure")
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.large)
-            .buttonBorderShape(.capsule)
-            .tint(.indigo)
-            .padding(.horizontal, 24)
-            .padding(.bottom, 80)
+            .frame(width: w, height: h)
             .navigationDestination(isPresented: $navigateToGame) {
                 GameView(gameState: gameState, popToRoot: $popToRoot)
             }
@@ -243,7 +190,8 @@ struct ObjectsSlide: View {
 // MARK: - Object Card
 struct ObjectCard: View {
     let object: GameObject
-    
+    var scale: CGFloat = 1.0
+
     var difficultyColor: Color {
         switch object.difficulty {
         case .easy: return .green
@@ -251,88 +199,55 @@ struct ObjectCard: View {
         case .hard: return .red
         }
     }
-    
+
     var body: some View {
-        HStack(spacing: 16) {
-            // Difficulty indicator circle
-            Circle()
-                .fill(difficultyColor.opacity(0.2))
-                .frame(width: 44, height: 44)
-                .overlay {
-                    Image(systemName: "scope")
-                        .font(.body)
-                        .foregroundStyle(difficultyColor)
-                }
-            
-            VStack(alignment: .leading, spacing: 4) {
+        HStack(spacing: 12 * scale) {
+            Group {
+                Image(object.imageName)
+                    .resizable()
+            }
+            .scaledToFit()
+            .frame(width: 100 * scale, height: 100 * scale)
+
+            VStack(alignment: .leading, spacing: 3 * scale) {
                 Text(object.name)
-                    .font(.headline)
-                    .foregroundStyle(.primary)
-                
-                HStack(spacing: 8) {
-                    // Difficulty badge
+                    .font(.custom("FredokaOne-Regular", size: 28 * scale))
+                    .foregroundStyle(.black)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+
+                HStack(spacing: 6 * scale) {
                     Text(object.difficulty.rawValue.capitalized)
-                        .font(.caption)
-                        .fontWeight(.medium)
+                        .font(.custom("FredokaOne-Regular", size: 28 * scale))
+                        .font(.system(size: 20 * scale, weight: .semibold))
                         .foregroundStyle(difficultyColor)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 3)
+                        .padding(.horizontal, 8 * scale)
+                        .padding(.vertical, 2 * scale)
                         .background(difficultyColor.opacity(0.15))
                         .clipShape(Capsule())
-                    
-                    // Points
-                    Label("\(object.points)", systemImage: "star.fill")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+
+                    Image("Star")
+                        .resizable()
+                        .frame(width: 30 * scale, height: 30 * scale)
+         
+                    Text("\(object.points)")
+                        .font(.custom("FredokaOne-Regular", size: 30 * scale))
+                        .foregroundStyle(Color("StatsText"))
                 }
             }
-            
-            Spacer()
-            
-            // Checkbox style indicator
-            Circle()
-                .strokeBorder(Color.secondary.opacity(0.3), lineWidth: 2)
-                .frame(width: 26, height: 26)
+
+            Spacer(minLength: 0)
+
+
         }
-        .padding(16)
+        .padding(.horizontal, 14 * scale)
+        .padding(.vertical, 12 * scale)
         .background(
-            RoundedRectangle(cornerRadius: 16)
-                .fill(Color(.secondarySystemGroupedBackground))
+            RoundedRectangle(cornerRadius: 18 * scale)
+                .fill(.white)
+                .shadow(color: .black.opacity(0.08), radius: 4, y: 2)
         )
     }
 }
 
-// MARK: - Page Indicator
-// This is for the little swipte to right text on the bottom of the onboarding view before
-// starting a new game.
-struct PageIndicator: View {
-    let count: Int
-    let currentIndex: Int
 
-    var body: some View {
-        HStack(spacing: 8) {
-            ForEach(0..<count, id: \.self) { index in
-                Capsule()
-                    .fill(index == currentIndex ? Color.indigo : Color.secondary.opacity(0.3))
-                    .frame(width: index == currentIndex ? 24 : 8, height: 8)
-                    .animation(.spring(response: 0.3), value: currentIndex)
-            }
-        }
-        .padding(.vertical, 8)
-        .padding(.horizontal, 16)
-        .background(
-            Capsule()
-                .fill(.ultraThinMaterial)
-        )
-    }
-}
-
-#Preview {
-    NavigationStack {
-        if #available(iOS 17.0, *) {
-            OnboardingView(gameState: GameState(), popToRoot: .constant(false))
-        } else {
-            // Fallback on earlier versions
-        }
-    }
-}

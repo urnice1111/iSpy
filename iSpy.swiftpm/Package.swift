@@ -21,17 +21,18 @@ let package = Package(
             displayVersion: "1.0",
             bundleVersion: "1",
             appIcon: .placeholder(icon: .car),
-            accentColor: .presetColor(.orange),
+            accentColor: .presetColor(.blue),
             supportedDeviceFamilies: [
                 .pad,
                 .phone
             ],
             supportedInterfaceOrientations: [
                 .portrait,
+                .portraitUpsideDown,
                 .landscapeRight,
-                .landscapeLeft,
-                .portraitUpsideDown(.when(deviceFamilies: [.pad]))
-            ]
+                .landscapeLeft
+            ],
+            additionalInfoPlistContentFilePath: "Info.plist"
         )
     ],
     targets: [
@@ -39,9 +40,10 @@ let package = Package(
             name: "AppModule",
             path: ".",
             resources: [
+                .process("FredokaOne-Regular.ttf"),
                 .copy("MLFile/MultiLabelModel.mlmodelc")
             ]
         )
     ],
-    swiftLanguageVersions: [.version("6")]
+    swiftLanguageModes: [.v6]
 )

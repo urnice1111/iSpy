@@ -584,28 +584,27 @@ struct ConfettiView: View {
         }
     }
 }
-
-// MARK: - Preview
-
-@available(iOS 26.0, *)
-#Preview {
-    let state: GameState = {
-        let s = GameState()
-        s.totalScore = 100
-        s.collectedItems = [
-            CollectedItem(
-                object: GameObject(name: "Traffic Cone", category: "Road", difficulty: .easy),
-                challengeId: UUID()
-            )
-        ]
-        return s
-    }()
-    
-    NavigationStack {
-        ObjectDetailView(
-            collectedItem: state.collectedItems[0]
-        )
-    }
-    .environment(state)
-    .previewInterfaceOrientation(.landscapeLeft)
-}
+//
+//// MARK: - Preview
+//
+//@available(iOS 26.0, *)
+//#Preview(traits: .landscapeLeft) {
+//    let state: GameState = {
+//        let s = GameState()
+//        s.totalScore = 100
+//        s.collectedItems = [
+//            CollectedItem(
+//                object: GameObject(name: "Traffic Cone", category: "Road", difficulty: .easy),
+//                challengeId: UUID()
+//            )
+//        ]
+//        return s
+//    }()
+//    
+//    NavigationStack {
+//        ObjectDetailView(
+//            collectedItem: state.collectedItems[0]
+//        )
+//    }
+//    .environment(state)
+//}

@@ -86,7 +86,7 @@ class MultiLabelModel {
 
     /// URL of model assuming it was installed in the same bundle as this class
     class var urlOfModelInThisBundle : URL {
-        let bundle = Bundle(for: self)
+        let bundle = Bundle.module
         return bundle.url(forResource: "MultiLabelModel", withExtension:"mlmodelc")!
     }
 

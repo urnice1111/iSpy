@@ -26,11 +26,6 @@ struct GameChallenge: Identifiable, Codable {
         return max(0, remaining)
     }
     
-    var progress: Double {
-        guard !objectsToFind.isEmpty else { return 0 }
-        return Double(foundObjects.count) / Double(objectsToFind.count)
-    }
-    
     func isObjectFound(_ object: GameObject) -> Bool {
         foundObjects.contains { $0.id == object.id }
     }

@@ -8,12 +8,18 @@ class GameState {
     var collectedItems: [CollectedItem] = []
     var totalScore: Int = 0
     var completedChallengesCount: Int = 0
+    var challengeTitles: [String: String] = [:]
+    var isCameraActive: Bool = false
+    var isFullScreenActive: Bool = false
+    var purchasedStickerIds: Set<String> = []
     
     private let userDefaults = UserDefaults.standard
     private let challengeKey = "currentChallenge"
     private let collectedItemsKey = "collectedItems"
     private let totalScoreKey = "totalScore"
     private let completedChallengesKey = "completedChallengesCount"
+    private let challengeTitlesKey = "challengeTitles"
+    private let purchasedStickersKey = "purchasedStickerIds"
     
     init() {
         loadState()
@@ -30,7 +36,7 @@ class GameState {
         challenge.markObjectFound(object)
         currentChallenge = challenge
         
-        // Save image to file system and get the path
+//         Save image to file system and get the path
         var imagePath: String? = nil
         if let data = imageData {
             imagePath = CollectedItem.saveImage(data)
@@ -55,29 +61,23 @@ class GameState {
         saveState()
     }
     
-    func cancelChallenge() {
-        currentChallenge = nil
-        saveState()
-    }
-    
     func saveState() {
-        // Capture current values to avoid race conditions
         let challenge = currentChallenge
         let items = collectedItems
         let score = totalScore
         let completedCount = completedChallengesCount
-        // Capture keys locally as Sendable values (String is Sendable)
+        let titles = challengeTitles
         let challengeKey = self.challengeKey
         let collectedItemsKey = self.collectedItemsKey
         let totalScoreKey = self.totalScoreKey
         let completedChallengesKey = self.completedChallengesKey
+        let challengeTitlesKey = self.challengeTitlesKey
+        let purchasedIds = purchasedStickerIds
+        let purchasedStickersKey = self.purchasedStickersKey
         
-        // Perform encoding and saving on background queue to avoid UI freezes
         DispatchQueue.global(qos: .utility).async {
-            // Use UserDefaults.standard directly to avoid capturing non-Sendable self
             let defaults = UserDefaults.standard
             
-            // Save current challenge
             if let challenge = challenge {
                 if let encoded = try? JSONEncoder().encode(challenge) {
                     defaults.set(encoded, forKey: challengeKey)
@@ -86,14 +86,20 @@ class GameState {
                 defaults.removeObject(forKey: challengeKey)
             }
             
-            // Save collected items
             if let encoded = try? JSONEncoder().encode(items) {
                 defaults.set(encoded, forKey: collectedItemsKey)
             }
             
-            // Save score and stats
+            if let encoded = try? JSONEncoder().encode(titles) {
+                defaults.set(encoded, forKey: challengeTitlesKey)
+            }
+            
             defaults.set(score, forKey: totalScoreKey)
             defaults.set(completedCount, forKey: completedChallengesKey)
+            
+            if let encoded = try? JSONEncoder().encode(purchasedIds) {
+                defaults.set(encoded, forKey: purchasedStickersKey)
+            }
         }
     }
     
@@ -110,27 +116,17 @@ class GameState {
             collectedItems = items
         }
         
-        // Load score and stats
+        if let data = userDefaults.data(forKey: challengeTitlesKey),
+           let titles = try? JSONDecoder().decode([String: String].self, from: data) {
+            challengeTitles = titles
+        }
+        
         totalScore = userDefaults.integer(forKey: totalScoreKey)
         completedChallengesCount = userDefaults.integer(forKey: completedChallengesKey)
-    }
-    
-    func resetGame() {
-        currentChallenge = nil
-        collectedItems = []
-        totalScore = 0
-        completedChallengesCount = 0
-        saveState()
-    }
-    
-    /// Update the AI-generated description for a collected item
-    /// - Parameters:
-    ///   - itemId: The UUID of the item to update
-    ///   - description: The AI-generated description to save
-    func updateItemDescription(_ itemId: UUID, description: String) {
-        if let index = collectedItems.firstIndex(where: { $0.id == itemId }) {
-            collectedItems[index].aiDescription = description
-            saveState()
+        
+        if let data = userDefaults.data(forKey: purchasedStickersKey),
+           let ids = try? JSONDecoder().decode(Set<String>.self, from: data) {
+            purchasedStickerIds = ids
         }
     }
     
@@ -147,13 +143,31 @@ class GameState {
         saveState()
     }
     
-    /// Reset quiz for a collected item (debug only) - subtracts previous bonus and clears quiz state
-    func resetQuiz(itemId: UUID) {
+    // MARK: - Stickers
+    
+    func purchaseSticker(_ sticker: StickerDefinition) -> Bool {
+        guard totalScore >= sticker.price else { return false }
+        guard !purchasedStickerIds.contains(sticker.id) else { return true }
+        
+        totalScore -= sticker.price
+        purchasedStickerIds.insert(sticker.id)
+        saveState()
+        return true
+    }
+    
+    func isStickerPurchased(_ stickerId: String) -> Bool {
+        purchasedStickerIds.contains(stickerId)
+    }
+    
+    func savePlacedStickers(itemId: UUID, stickers: [PlacedSticker]) {
         guard let index = collectedItems.firstIndex(where: { $0.id == itemId }) else { return }
-        if let previousBonus = collectedItems[index].quizBonusPoints {
-            totalScore = max(0, totalScore - previousBonus)
-        }
-        collectedItems[index].quizBonusPoints = nil
+        collectedItems[index].placedStickers = stickers
+        saveState()
+    }
+    
+    func saveDrawing(itemId: UUID, data: Data?) {
+        guard let index = collectedItems.firstIndex(where: { $0.id == itemId }) else { return }
+        collectedItems[index].drawingData = data
         saveState()
     }
 }

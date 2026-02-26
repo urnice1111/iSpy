@@ -1,48 +1,57 @@
 import SwiftUI
+import CoreML
 import AVFoundation
+
+enum CaptureAnimationPhase {
+    case idle, flash, photoShrink, objectReveal, result, fadeOut
+}
 
 @available(iOS 17.0, *)
 struct GameView: View {
     @StateObject private var cameraService = CameraService()
-    @State private var detectionService = ObjectDetectionService()
     var gameState: GameState
-    @State private var timeRemaining: TimeInterval = 1800 // 30 minutes in seconds
+    @State private var timeRemaining: TimeInterval = 1800
     @State private var timer: Timer?
     @State private var showingCompletionAlert = false
-    @State private var showingProcessingAlert = false
     @State private var showingEndGameAlert = false
-    @State private var processingMessage = ""
-    @State private var isProcessingPhoto = false  // Prevents double-tap and shows loading
+    @State private var mlModel: MultiLabelModel?
     @Environment(\.dismiss) var dismiss
     @Binding var popToRoot: Bool
     
     @State private var isPinching = false
     @State private var initialZoomFactor: CGFloat = 1.0
-
+    
+    @State private var animationPhase: CaptureAnimationPhase = .idle
+    @State private var matchedObject: GameObject?
+    @State private var revealObjectIndex = 0
+    @State private var showCaptureConfetti = false
+    @State private var animationPhoto: UIImage?
+    @State private var photoScale: CGFloat = 1.0
+    @State private var photoOpacity: Double = 1.0
+    @State private var flashOpacity: Double = 0.0
+    @State private var overlayOpacity: Double = 1.0
+    
     var challenge: GameChallenge? {
         gameState.currentChallenge
     }
     
     private func clampedZoom(_ factor: CGFloat) -> CGFloat {
-        let minZ = cameraService.minZoomFactor
-        let maxZ = cameraService.maxZoomFactor
-        return min(max(factor, minZ), maxZ)
+        min(max(factor, cameraService.minZoomFactor), cameraService.maxZoomFactor)
     }
+    
+    // MARK: - Header
     
     @ViewBuilder
     private func headerView() -> some View {
         HStack {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Time Remaining")
-                    .font(.caption)
-                    .foregroundStyle(.white.opacity(0.8))
-                Text(timeString(from: timeRemaining))
-                    .font(.system(size: 28, weight: .bold, design: .rounded))
-                    .foregroundStyle(.white)
-                    .contentTransition(.numericText())
-            }
-            
-            Spacer()
+//            Button {
+//                showingEndGameAlert = true
+//            } label: {
+//                Image(systemName: "xmark.circle.fill")
+//                    .font(.system(size: 28))
+//                    .foregroundStyle(.white)
+//                    .shadow(color: .black.opacity(0.2), radius: 2, y: 1)
+//            }
             
             Button {
                 showingEndGameAlert = true
@@ -73,98 +82,113 @@ struct GameView: View {
                             .stroke(.white.opacity(0.15), lineWidth: 0.5)
                     )
             }
+            
         }
-        .padding()
-        .background(
-            LinearGradient(
-                colors: [Color.black.opacity(0.6), Color.clear],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-        )
+        .padding(.horizontal, 16)
+        
     }
+    
+    // MARK: - Objects List (right side card)
     
     @ViewBuilder
     private func objectsListView() -> some View {
         if let challenge = challenge {
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 12) {
-                    ForEach(challenge.objectsToFind) { object in
-                        ObjectStatusCard(
-                            object: object,
-                            isFound: challenge.isObjectFound(object)
-                        )
+            VStack(spacing: 10) {
+                HStack(spacing: 6) {
+                    Image("Star")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 30, height: 30)
+                    Text("\(gameState.totalScore)")
+                        .font(.custom("FredokaOne-Regular", size: 18))
+                        .foregroundStyle(.black)
+                }
+                .padding(.horizontal, 14)
+                .padding(.vertical, 8)
+                
+                ForEach(challenge.objectsToFind) { object in
+                    let found = challenge.isObjectFound(object)
+                    HStack(spacing: 10) {
+                        Image(object.imageName)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 44, height: 44)
+                        
+                        Spacer()
+                        
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 6)
+                                .stroke(found ? Color.green : Color.gray.opacity(0.4), lineWidth: 2)
+                                .frame(width: 26, height: 26)
+                            
+                            if found {
+                                Image(systemName: "checkmark")
+                                    .font(.system(size: 16, weight: .bold))
+                                    .foregroundStyle(.green)
+                            }
+                        }
                     }
                 }
-                .padding(.horizontal)
+                
+                Text(timeString(from: timeRemaining))
+                    .font(.custom("FredokaOne-Regular", size: 18))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .background(Capsule().fill(.black.opacity(0.35)))
+                    .contentTransition(.numericText())
+                
             }
-            .padding(.bottom, 20)
+            .padding(16)
+            .frame(width: 140)
+            .background(
+                ZStack {
+                    RoundedRectangle(cornerRadius: 20)
+                        .fill(Color("ColorOffset"))
+                        .offset(y: 4)
+                    RoundedRectangle(cornerRadius: 20)
+                        .fill(.white)
+                }
+            )
+            .shadow(color: .black.opacity(0.15), radius: 8, y: 4)
         }
     }
+    
+    // MARK: - Capture Button
     
     @ViewBuilder
-    private func captureControlsView() -> some View {
-        VStack(spacing: 15) {
-            if cameraService.isTaken {
-                HStack(spacing: 20) {
-                    Button {
-                        cameraService.reTake()
-                    } label: {
-                        Text("Retake")
-                            .font(.title3)
-                            .bold()
-                            .foregroundStyle(.white)
-                            .frame(width: 120, height: 50)
-                            .background(Color.gray.opacity(0.7))
-                            .clipShape(Capsule())
-                    }
+    private func captureButtonView() -> some View {
+        if !cameraService.isTaken && animationPhase == .idle {
+            Button {
+                let orientation = UIApplication.shared.connectedScenes
+                    .compactMap { $0 as? UIWindowScene }
+                    .first?.interfaceOrientation ?? .landscapeRight
+                cameraService.takePicture(interfaceOrientation: orientation)
+            } label: {
+                ZStack {
+                    Circle()
+                        .fill(Color.orange)
+                        .frame(width: 80, height: 80)
+                        .shadow(color: .orange.opacity(0.5), radius: 6, y: 3)
                     
-                    Button {
-                        processPhoto()
-                    } label: {
-                        HStack(spacing: 8) {
-                            if isProcessingPhoto {
-                                ProgressView()
-                                    .tint(.white)
-                            }
-                            Text(isProcessingPhoto ? "Analyzing..." : "Check Object")
-                        }
-                        .font(.title3)
-                        .bold()
+                    Circle()
+                        .stroke(Color.orange.opacity(0.4), lineWidth: 4)
+                        .frame(width: 92, height: 92)
+                    
+                    Image(systemName: "camera.fill")
+                        .font(.system(size: 32))
                         .foregroundStyle(.white)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 50)
-                        .background(isProcessingPhoto ? Color.blue.opacity(0.6) : Color.blue)
-                        .clipShape(Capsule())
-                    }
-                    .disabled(isProcessingPhoto)
                 }
-                .padding(.horizontal)
-            } else {
-                Button {
-                    cameraService.takePicture()
-                } label: {
-                    ZStack {
-                        Circle()
-                            .fill(Color.white)
-                            .frame(width: 70, height: 70)
-                        
-                        Circle()
-                            .stroke(Color.white, lineWidth: 3)
-                            .frame(width: 80, height: 80)
-                    }
-                }
-                .padding(.bottom, 30)
             }
+            
         }
     }
     
-    
+    // MARK: - Body
     
     var body: some View {
         ZStack {
             if cameraService.isTaken {
-                // Show captured image
                 if let image = cameraService.capturedImage {
                     Image(uiImage: image)
                         .resizable()
@@ -172,7 +196,6 @@ struct GameView: View {
                         .ignoresSafeArea()
                 }
             } else {
-                // Camera preview with gestures
                 CameraPreview(camera: cameraService)
                     .ignoresSafeArea()
                     .gesture(
@@ -182,69 +205,77 @@ struct GameView: View {
                                     isPinching = true
                                     initialZoomFactor = cameraService.currentZoomFactor
                                 }
-                                let newFactor = clampedZoom(initialZoomFactor * value)
-                                cameraService.setZoom(factor: newFactor)
+                                cameraService.setZoom(factor: clampedZoom(initialZoomFactor * value))
                             }
                             .onEnded { _ in
                                 isPinching = false
                             }
                     )
-                    .simultaneousGesture(
-                        TapGesture(count: 2).onEnded {
-                            let step: CGFloat = 0.5
-                            let current = cameraService.currentZoomFactor
-                            let maxZ = cameraService.maxZoomFactor
-                            let minZ = cameraService.minZoomFactor
-                            let nearMax = abs(current - maxZ) < 0.01
-                            let newFactor = nearMax ? minZ : min(current + step, maxZ)
-                            cameraService.setZoom(factor: newFactor)
-                        }
-                    )
             }
             
-            // Overlay UI
-            VStack {
-                headerView()
+            VStack(spacing: 0) {
+                HStack{
+                    headerView()
+//                    Spacer()
+                }
                 
-                Spacer()
-                
-                objectsListView()
-                
-                captureControlsView()
-                
-                .padding()
+                HStack {
+                    VStack {
+                        Spacer()
+                        objectsListView()
+                        Spacer()
+                    }
+                    .padding(.trailing, 16)
+                    
+                    Spacer()
+                    
+                    VStack {
+                        Spacer()
+                        captureButtonView()
+                            .padding(.bottom, 24)
+                        Spacer()
+                    }
+                                    
+                }
+                .padding(.horizontal,20)
             }
+            .opacity(animationPhase == .idle ? 1 : 0)
+            .animation(.easeOut(duration: 0.15), value: animationPhase)
+            
+            captureAnimationOverlay()
         }
-        .aiProcessingOverlay(isProcessing: isProcessingPhoto, message: "Analyzing photo")
         .onAppear {
-            setupCamera()
+            cameraService.checkCameraPermission()
             startTimer()
+            loadModel()
+            gameState.isCameraActive = true
         }
         .onDisappear {
             stopTimer()
+            gameState.isCameraActive = false
+        }
+        .onChange(of: cameraService.isReady) { _, ready in
+            if ready {
+                cameraService.startSession()
+            }
+        }
+        .onChange(of: cameraService.isTaken) { _, taken in
+            if taken {
+                processCapture()
+                print("processCapture called")
+            }
         }
         .navigationBarBackButtonHidden(true)
         .toolbar(.hidden, for: .tabBar)
-        
-        .alert("Processing Photo",
-               isPresented: $showingProcessingAlert
-        ){
-            Button("OK", role: .cancel) { }
-        } message: {
-            Text(processingMessage)
-        }
-        
-        .alert("End game?", isPresented: $showingEndGameAlert){
-            Button("End", role: .destructive){
+        .alert("End game?", isPresented: $showingEndGameAlert) {
+            Button("End", role: .destructive) {
                 gameState.finishChallenge()
                 popToRoot = false
             }
-            
-            Button("Cancel", role: .cancel){}
+            Button("Cancel", role: .cancel) {}
         } message: {
             Text("You will return to Home and your current challenge will end.")
         }
-        
         .alert("Challenge Complete!", isPresented: $showingCompletionAlert) {
             Button("OK") {
                 gameState.finishChallenge()
@@ -259,15 +290,235 @@ struct GameView: View {
                 }
             }
         }
+        .sensoryFeedback(.success, trigger: showCaptureConfetti)
         .tint(nil)
     }
     
-    private func setupCamera() {
-        cameraService.checkCameraPermission()
+    // MARK: - Capture Processing (placeholder for future ML)
+    
+    private func processCapture() {
+        guard let cgImage = cameraService.capturedImage?.cgImage,
+              let challenge = gameState.currentChallenge else {
+            cameraService.reTake()
+            return
+        }
+        
+        animationPhoto = cameraService.capturedImage
+        let savedImage = cameraService.capturedImage
+        
+        cameraService.reTake()
+        startCaptureAnimation()
+        
+        DispatchQueue.global(qos: .userInitiated).async {
+            do {
+                guard let model = mlModel else { return }
+                let input = try MultiLabelModelInput(imageWith: cgImage)
+                let output = try model.prediction(input: input)
+                
+                let matched = challenge.objectsToFind.first { object in
+                    !challenge.isObjectFound(object) &&
+                    (output.targetProbability[object.name] ?? 0) >= 0.45
+                }
+                
+                DispatchQueue.main.async {
+                    if let object = matched {
+                        let imageData = savedImage?.jpegData(compressionQuality: 0.8)
+                        gameState.completeObject(object, imageData: imageData)
+                        self.matchedObject = object
+                    }
+                }
+            } catch {
+                print("ML prediction failed: \(error)")
+            }
+        }
     }
     
+    private func loadModel() {
+        DispatchQueue.global(qos: .userInitiated).async {
+            do {
+                let model = try MultiLabelModel(configuration: MLModelConfiguration())
+                DispatchQueue.main.async {
+                    self.mlModel = model
+                }
+            } catch {
+                print("Failed to load model: \(error)")
+            }
+        }
+    }
+    
+    // MARK: - Capture Animation Overlay
+    
+    @ViewBuilder
+    private func captureAnimationOverlay() -> some View {
+        if animationPhase != .idle {
+            ZStack {
+                Color.white
+                    .ignoresSafeArea()
+                    .opacity(animationPhase == .flash ? flashOpacity : 1.0)
+                
+                if animationPhase == .photoShrink, let photo = animationPhoto {
+                    Image(uiImage: photo)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(
+                            width: UIScreen.main.bounds.width,
+                            height: UIScreen.main.bounds.height
+                        )
+                        .clipped()
+                        .scaleEffect(photoScale)
+                        .opacity(photoOpacity)
+                        .clipShape(RoundedRectangle(cornerRadius: 20 * (1 - photoScale)))
+                }
+                
+                if animationPhase == .objectReveal, let challenge = challenge {
+                    let objects = challenge.objectsToFind
+                    let idx = min(revealObjectIndex, objects.count - 1)
+                    
+                    Image(objects[idx].imageName)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 400)
+                        .transition(.asymmetric(
+                            insertion: .scale(scale: 0.2).combined(with: .opacity),
+                            removal: .scale(scale: 1.6).combined(with: .opacity)
+                        ))
+                        .id(revealObjectIndex)
+                }
+                
+                if animationPhase == .result {
+                    if let obj = matchedObject {
+                        VStack(spacing: 20) {
+                            Image(obj.imageName)
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 180, height: 180)
+                            
+                            Text(obj.name)
+                                .font(.custom("FredokaOne-Regular", size: 36))
+                                .foregroundStyle(Color("StatsText"))
+                            
+                            HStack(spacing: 8) {
+                                Image("Star")
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(width: 36, height: 36)
+                                Text("+\(obj.points)")
+                                    .font(.custom("FredokaOne-Regular", size: 32))
+                                    .foregroundStyle(.orange)
+                            }
+                        }
+                        .transition(.scale(scale: 0.5).combined(with: .opacity))
+                    } else {
+                        VStack(spacing: 16) {
+                            Image(systemName: "xmark.circle.fill")
+                                .font(.system(size: 80))
+                                .foregroundStyle(.red.opacity(0.6))
+                            Text("Not Found")
+                                .font(.custom("FredokaOne-Regular", size: 28))
+                                .foregroundStyle(.gray)
+                        }
+                        .transition(.scale(scale: 0.5).combined(with: .opacity))
+                    }
+                    
+                    if showCaptureConfetti {
+                        ConfettiView()
+                            .ignoresSafeArea()
+                            .allowsHitTesting(false)
+                    }
+                }
+            }
+            .opacity(animationPhase == .fadeOut ? overlayOpacity : 1.0)
+            .ignoresSafeArea()
+            .allowsHitTesting(true)
+        }
+    }
+    
+    // MARK: - Capture Animation Driver
+    
+    private func startCaptureAnimation() {
+        guard let challenge = challenge else { return }
+        let objects = challenge.objectsToFind
+        guard !objects.isEmpty else { return }
+        
+        overlayOpacity = 1.0
+        photoScale = 1.0
+        photoOpacity = 1.0
+        flashOpacity = 0.0
+        revealObjectIndex = 0
+        showCaptureConfetti = false
+        matchedObject = nil
+        
+        animationPhase = .flash
+        withAnimation(.easeIn(duration: 0.15)) {
+            flashOpacity = 1.0
+        }
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+            animationPhase = .photoShrink
+            withAnimation(.easeInOut(duration: 0.5)) {
+                photoScale = 0.3
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                withAnimation(.easeOut(duration: 0.2)) {
+                    photoOpacity = 0
+                }
+            }
+        }
+        
+        let revealStart = 0.75
+        DispatchQueue.main.asyncAfter(deadline: .now() + revealStart) {
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+                animationPhase = .objectReveal
+            }
+            
+            for i in 0..<objects.count {
+                DispatchQueue.main.asyncAfter(deadline: .now() + Double(i) * 0.35) {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.5)) {
+                        revealObjectIndex = i
+                    }
+                }
+            }
+            
+            let totalRevealTime = Double(objects.count) * 0.35 + 0.3
+            DispatchQueue.main.asyncAfter(deadline: .now() + totalRevealTime) {
+                withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
+                    animationPhase = .result
+                }
+                
+                if matchedObject != nil {
+                    showCaptureConfetti = true
+                }
+                
+                let resultDisplayTime: Double = matchedObject != nil ? 2.5 : 1.2
+                DispatchQueue.main.asyncAfter(deadline: .now() + resultDisplayTime) {
+                    withAnimation(.easeInOut(duration: 0.5)) {
+                        animationPhase = .fadeOut
+                        overlayOpacity = 0
+                    }
+                    
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.55) {
+                        resetAnimationState()
+                    }
+                }
+            }
+        }
+    }
+    
+    private func resetAnimationState() {
+        animationPhase = .idle
+        matchedObject = nil
+        revealObjectIndex = 0
+        showCaptureConfetti = false
+        animationPhoto = nil
+        photoScale = 1.0
+        photoOpacity = 1.0
+        flashOpacity = 0.0
+        overlayOpacity = 1.0
+    }
+    
+    // MARK: - Timer
+    
     private func startTimer() {
-        // Stop any existing timer first
         stopTimer()
         
         if let challenge = challenge {
@@ -284,16 +535,13 @@ struct GameView: View {
                 return
             }
             
-            // Calculate remaining time without modifying gameState
             let elapsed = Date().timeIntervalSince(challenge.startTime)
             let total = TimeInterval(challenge.durationMinutes * 60)
             let remaining = max(0, total - elapsed)
             
             DispatchQueue.main.async {
-                // Only update local state for timer display - avoids full view tree rebuild
                 timeRemaining = remaining
                 
-                // Only update gameState when there's a meaningful state change
                 if remaining <= 0 && !challenge.isExpired && !challenge.isCompleted {
                     var expiredChallenge = challenge
                     expiredChallenge.checkExpiration()
@@ -320,79 +568,11 @@ struct GameView: View {
         let seconds = Int(interval) % 60
         return String(format: "%02d:%02d", minutes, seconds)
     }
-    
-    private func processPhoto() {
-        guard let image = cameraService.capturedImage,
-              let challenge = gameState.currentChallenge,
-              !isProcessingPhoto else {
-            return
-        }
-        
-        // Set processing state immediately on main thread
-        isProcessingPhoto = true
-        
-        // Capture start time for minimum animation duration
-        let startTime = Date()
-        let minimumProcessingDuration: TimeInterval = 2.5 // Show animation for at least 2.5 seconds
-        
-        // Prepare image for CoreML (quick operation, can stay on main thread)
-        let preparedImage = cameraService.prepareForCoreML() ?? image
-        
-        let detectionService = self.detectionService
-        DispatchQueue.global(qos: .userInitiated).async {
-            // Heavy ML work happens here - OFF the main thread
-            let detectedObjects = detectionService.detectObjects(in: preparedImage)
-            
-            // Check if any of the detected objects match objects we're looking for
-            var foundObject: GameObject? = nil
-            for object in challenge.objectsToFind {
-                if !challenge.isObjectFound(object) {
-                    if detectionService.checkIfObjectFound(object.name, in: detectedObjects) {
-                        foundObject = object
-                        break
-                    }
-                }
-            }
-            
-            // Calculate how long we need to wait to meet minimum duration
-            let elapsed = Date().timeIntervalSince(startTime)
-            let remainingDelay = max(0, minimumProcessingDuration - elapsed)
-            
-            // Wait for minimum duration before showing results
-            DispatchQueue.main.asyncAfter(deadline: .now() + remainingDelay) { [self] in
-                if let object = foundObject {
-                    // Object found!
-                    let imageData = image.jpegData(compressionQuality: 0.8)
-                    gameState.completeObject(object, imageData: imageData)
-                    
-                    processingMessage = "Found: \(object.name)! +\(object.points) points"
-                    showingProcessingAlert = true
-                } else {
-                    processingMessage = "No matching objects found. Keep looking!"
-                    showingProcessingAlert = true
-                }
-                
-                isProcessingPhoto = false
-                
-                // Check if challenge is complete
-                if let updatedChallenge = gameState.currentChallenge, updatedChallenge.isCompleted {
-                    stopTimer()
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-                        showingProcessingAlert = false
-                        showingCompletionAlert = true
-                    }
-                } else {
-                    // Reset camera after processing
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-                        showingProcessingAlert = false
-                        cameraService.reTake()
-                    }
-                }
-            }
-        }
-    }
 }
 
+// MARK: - Camera Preview
+
+@available(iOS 17.0, *)
 struct CameraPreview: UIViewControllerRepresentable {
     @ObservedObject var camera: CameraService
     
@@ -405,30 +585,66 @@ struct CameraPreview: UIViewControllerRepresentable {
     func updateUIViewController(_ uiViewController: CameraViewController, context: Context) {}
 }
 
+@available(iOS 17.0, *)
 class CameraViewController: UIViewController {
     var camera: CameraService!
     private var previewLayer: AVCaptureVideoPreviewLayer?
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        
         let layer = AVCaptureVideoPreviewLayer(session: camera.session)
         layer.frame = view.bounds
         layer.videoGravity = .resizeAspectFill
         view.layer.addSublayer(layer)
         previewLayer = layer
+        
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(sessionDidStartRunning),
+            name: .AVCaptureSessionDidStartRunning,
+            object: camera.session
+        )
+    }
+    
+    @objc private func sessionDidStartRunning() {
+        DispatchQueue.main.async { [weak self] in
+            self?.applyRotation()
+        }
     }
     
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
-        // Set published properties after view is fully loaded to avoid "publishing during view update"
         camera.preview = previewLayer
         camera.startSession()
+        applyRotation()
     }
     
     override func viewWillLayoutSubviews() {
         super.viewWillLayoutSubviews()
         previewLayer?.frame = view.bounds
+        applyRotation()
+    }
+    
+    private func applyRotation() {
+        guard let connection = previewLayer?.connection else { return }
+        
+        let angle: CGFloat
+        if let scene = view.window?.windowScene {
+            switch scene.interfaceOrientation {
+            case .landscapeLeft:
+                angle = 180
+            case .landscapeRight:
+                angle = 0
+            default:
+                angle = 0
+            }
+        } else {
+            angle = 0
+        }
+        
+        if connection.isVideoRotationAngleSupported(angle) {
+            connection.videoRotationAngle = angle
+        }
     }
     
     override func viewWillDisappear(_ animated: Bool) {
@@ -438,56 +654,9 @@ class CameraViewController: UIViewController {
     
     override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
+        NotificationCenter.default.removeObserver(self, name: .AVCaptureSessionDidStartRunning, object: camera.session)
         previewLayer?.removeFromSuperlayer()
         previewLayer = nil
-    }
-}
-
-struct ObjectStatusCard: View {
-    let object: GameObject
-    let isFound: Bool
-    
-    var difficultyColor: Color {
-        switch object.difficulty {
-        case .easy: return .green
-        case .medium: return .orange
-        case .hard: return .red
-        }
-    }
-    
-    var body: some View {
-        VStack(spacing: 8) {
-            ZStack {
-                Circle()
-                    .fill(isFound ? Color.green : Color.white.opacity(0.3))
-                    .frame(width: 50, height: 50)
-                
-                if isFound {
-                    Image(systemName: "checkmark")
-                        .font(.system(size: 24, weight: .bold))
-                        .foregroundStyle(.white)
-                } else {
-                    Text(String(object.name.prefix(1)))
-                        .font(.system(size: 20, weight: .bold))
-                        .foregroundStyle(.white)
-                }
-            }
-            
-            Text(object.name)
-                .font(.system(size: 12, weight: .medium))
-                .foregroundStyle(.white)
-                .lineLimit(1)
-                .frame(width: 70)
-            
-            Text("\(object.points) pts")
-                .font(.system(size: 10))
-                .foregroundStyle(.white.opacity(0.8))
-        }
-        .padding(8)
-        .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(isFound ? Color.green.opacity(0.3) : Color.black.opacity(0.4))
-        )
     }
 }
 
