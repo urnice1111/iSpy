@@ -20,8 +20,8 @@ let package = Package(
             teamIdentifier: "47V6XN83NZ",
             displayVersion: "1.0",
             bundleVersion: "1",
-            appIcon: .placeholder(icon: .openBook),
-            accentColor: .presetColor(.yellow),
+            appIcon: .placeholder(icon: .car),
+            accentColor: .presetColor(.blue),
             supportedDeviceFamilies: [
                 .pad,
                 .phone
@@ -30,7 +30,7 @@ let package = Package(
                 .portrait,
                 .portraitUpsideDown,
                 .landscapeRight,
-                .landscapeLeft,
+                .landscapeLeft
             ],
             additionalInfoPlistContentFilePath: "Info.plist"
         )
@@ -45,5 +45,5 @@ let package = Package(
             ]
         )
     ],
-    swiftLanguageVersions: [.v6]
+    swiftLanguageVersions: [.version("6")]
 )

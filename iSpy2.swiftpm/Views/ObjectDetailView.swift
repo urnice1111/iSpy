@@ -388,6 +388,7 @@ struct ObjectDetailView: View {
         )
         withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) {
             placedStickers.append(placed)
+            isDrawingActive = false
         }
         debounceSaveStickers()
     }
@@ -434,6 +435,7 @@ struct DraggableStickerView: View {
     @State private var dragOffset: CGSize = .zero
     @State private var currentScale: CGFloat = 1.0
     @State private var currentRotation: Angle = .zero
+    @State private var commitPending = false
     
     var body: some View {
         Image(sticker.stickerImageName)
@@ -445,7 +447,24 @@ struct DraggableStickerView: View {
             .offset(x: dragOffset.width, y: dragOffset.height)
             .position(sticker.position)
             .gesture(dragGesture)
-            .gesture(scaleAndRotateGesture)
+            .simultaneousGesture(scaleAndRotateGesture)
+    }
+    
+    private func scheduleCommit() {
+        guard !commitPending else { return }
+        commitPending = true
+        DispatchQueue.main.async {
+            commitPending = false
+            var updated = sticker
+            updated.positionX += dragOffset.width
+            updated.positionY += dragOffset.height
+            updated.scale = max(0.2, sticker.scale * currentScale)
+            updated.rotationDegrees += currentRotation.degrees
+            dragOffset = .zero
+            currentScale = 1.0
+            currentRotation = .zero
+            onUpdate(updated)
+        }
     }
     
     private var dragGesture: some Gesture {
@@ -458,14 +477,12 @@ struct DraggableStickerView: View {
                 onDragChanged?(value.location)
             }
             .onEnded { value in
-                let globalPos = value.location
-                onDragEnded?(globalPos)
-                
-                var updated = sticker
-                updated.positionX += value.location.x - value.startLocation.x
-                updated.positionY += value.location.y - value.startLocation.y
-                dragOffset = .zero
-                onUpdate(updated)
+                onDragEnded?(value.location)
+                dragOffset = CGSize(
+                    width: value.location.x - value.startLocation.x,
+                    height: value.location.y - value.startLocation.y
+                )
+                scheduleCommit()
             }
     }
     
@@ -474,24 +491,21 @@ struct DraggableStickerView: View {
             MagnificationGesture()
                 .onChanged { value in
                     currentScale = value
-                }
-                .onEnded { value in
-                    var updated = sticker
-                    updated.scale = max(0.2, sticker.scale * value)
-                    currentScale = 1.0
-                    onUpdate(updated)
                 },
             RotationGesture()
                 .onChanged { angle in
                     currentRotation = angle
                 }
-                .onEnded { angle in
-                    var updated = sticker
-                    updated.rotationDegrees += angle.degrees
-                    currentRotation = .zero
-                    onUpdate(updated)
-                }
         )
+        .onEnded { value in
+            if let scale = value.first {
+                currentScale = scale
+            }
+            if let rotation = value.second {
+                currentRotation = rotation
+            }
+            scheduleCommit()
+        }
     }
 }
 
