@@ -9,6 +9,9 @@ class GameState {
     var totalScore: Int = 0
     var completedChallengesCount: Int = 0
     var challengeTitles: [String: String] = [:]
+    var isCameraActive: Bool = false
+    var isFullScreenActive: Bool = false
+    var purchasedStickerIds: Set<String> = []
     
     private let userDefaults = UserDefaults.standard
     private let challengeKey = "currentChallenge"
@@ -16,6 +19,7 @@ class GameState {
     private let totalScoreKey = "totalScore"
     private let completedChallengesKey = "completedChallengesCount"
     private let challengeTitlesKey = "challengeTitles"
+    private let purchasedStickersKey = "purchasedStickerIds"
     
     init() {
         loadState()
@@ -32,14 +36,14 @@ class GameState {
         challenge.markObjectFound(object)
         currentChallenge = challenge
         
-        // Save image to file system and get the path
-//        var imagePath: String? = nil
-//        if let data = imageData {
-//            imagePath = CollectedItem.saveImage(data)
-//        }
+//         Save image to file system and get the path
+        var imagePath: String? = nil
+        if let data = imageData {
+            imagePath = CollectedItem.saveImage(data)
+        }
         
         // Add to collected items with just the path (not the data)
-        let item = CollectedItem(object: object, challengeId: challenge.id)
+        let item = CollectedItem(object: object, imagePath: imagePath, challengeId: challenge.id)
         collectedItems.append(item)
         
         // Update score
@@ -78,6 +82,8 @@ class GameState {
         let totalScoreKey = self.totalScoreKey
         let completedChallengesKey = self.completedChallengesKey
         let challengeTitlesKey = self.challengeTitlesKey
+        let purchasedIds = purchasedStickerIds
+        let purchasedStickersKey = self.purchasedStickersKey
         
         DispatchQueue.global(qos: .utility).async {
             let defaults = UserDefaults.standard
@@ -100,6 +106,10 @@ class GameState {
             
             defaults.set(score, forKey: totalScoreKey)
             defaults.set(completedCount, forKey: completedChallengesKey)
+            
+            if let encoded = try? JSONEncoder().encode(purchasedIds) {
+                defaults.set(encoded, forKey: purchasedStickersKey)
+            }
         }
     }
     
@@ -123,6 +133,11 @@ class GameState {
         
         totalScore = userDefaults.integer(forKey: totalScoreKey)
         completedChallengesCount = userDefaults.integer(forKey: completedChallengesKey)
+        
+        if let data = userDefaults.data(forKey: purchasedStickersKey),
+           let ids = try? JSONDecoder().decode(Set<String>.self, from: data) {
+            purchasedStickerIds = ids
+        }
     }
     
     func resetGame() {
@@ -131,6 +146,7 @@ class GameState {
         totalScore = 0
         completedChallengesCount = 0
         challengeTitles = [:]
+        purchasedStickerIds = []
         saveState()
     }
     
@@ -165,6 +181,34 @@ class GameState {
             totalScore = max(0, totalScore - previousBonus)
         }
         collectedItems[index].quizBonusPoints = nil
+        saveState()
+    }
+    
+    // MARK: - Stickers
+    
+    func purchaseSticker(_ sticker: StickerDefinition) -> Bool {
+        guard totalScore >= sticker.price else { return false }
+        guard !purchasedStickerIds.contains(sticker.id) else { return true }
+        
+        totalScore -= sticker.price
+        purchasedStickerIds.insert(sticker.id)
+        saveState()
+        return true
+    }
+    
+    func isStickerPurchased(_ stickerId: String) -> Bool {
+        purchasedStickerIds.contains(stickerId)
+    }
+    
+    func savePlacedStickers(itemId: UUID, stickers: [PlacedSticker]) {
+        guard let index = collectedItems.firstIndex(where: { $0.id == itemId }) else { return }
+        collectedItems[index].placedStickers = stickers
+        saveState()
+    }
+    
+    func saveDrawing(itemId: UUID, data: Data?) {
+        guard let index = collectedItems.firstIndex(where: { $0.id == itemId }) else { return }
+        collectedItems[index].drawingData = data
         saveState()
     }
 }

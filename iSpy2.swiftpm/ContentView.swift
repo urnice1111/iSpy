@@ -21,8 +21,13 @@ struct ContentView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             
-            CustomSidebar(selectedTab: $selectedTab)
+            if !gameState.isCameraActive && !gameState.isFullScreenActive {
+                CustomSidebar(selectedTab: $selectedTab)
+                    .transition(.move(edge: .trailing))
+            }
         }
+        .animation(.easeInOut(duration: 0.25), value: gameState.isCameraActive)
+        .animation(.easeInOut(duration: 0.25), value: gameState.isFullScreenActive)
         .environment(gameState)
     }
 }

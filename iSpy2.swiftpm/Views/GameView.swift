@@ -223,13 +223,13 @@ struct GameView: View {
             VStack(spacing: 0) {
                 HStack{
                     headerView()
-                    Spacer()
+//                    Spacer()
                 }
                 
                 HStack {
                     VStack {
+                        Spacer()
                         objectsListView()
-                            .padding(.top, 16)
                         Spacer()
                     }
                     .padding(.trailing, 16)
@@ -255,9 +255,11 @@ struct GameView: View {
             cameraService.checkCameraPermission()
             startTimer()
             loadModel()
+            gameState.isCameraActive = true
         }
         .onDisappear {
             stopTimer()
+            gameState.isCameraActive = false
         }
         .onChange(of: cameraService.isTaken) { _, taken in
             if taken {
@@ -377,7 +379,7 @@ struct GameView: View {
                     Image(ObjectStatusCard.assetName(for: objects[idx]))
                         .resizable()
                         .scaledToFit()
-                        .frame(width: 130, height: 130)
+                        .frame(width: 400)
                         .transition(.asymmetric(
                             insertion: .scale(scale: 0.2).combined(with: .opacity),
                             removal: .scale(scale: 1.6).combined(with: .opacity)

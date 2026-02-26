@@ -1,11 +1,5 @@
-//
-//  ObjectDetailView.swift
-//  iSpy
-//
-//  Created by UwU on 22/02/26.
-//
 import SwiftUI
-import FoundationModels
+import PencilKit
 
 @available(iOS 26.0, *)
 struct ObjectDetailView: View {
@@ -14,17 +8,32 @@ struct ObjectDetailView: View {
     @Environment(GameState.self) var gameState
     @Environment(\.dismiss) private var dismiss
     
-    @State private var aiService = AppleIntelligenceService()
-    @State private var quizQuestions: [QuizQuestion]?
-    @State private var isGeneratingQuiz = false
-    @State private var currentQuestionIndex = 0
-    @State private var correctCount = 0
-    @State private var completedQuizBonus: Int?
-    @State private var showConfetti = false
-    @State private var isRetrying = false
+    @State private var drawing = PKDrawing()
+    @State private var placedStickers: [PlacedSticker] = []
+    @State private var selectedColor: Color = .black
+    @State private var isErasing = false
+    @State private var isDrawingActive = true
+    @State private var canvasSize: CGSize = .zero
+    @State private var saveWorkItem: DispatchWorkItem?
+    @State private var isDraggingOverTrash = false
+    @State private var trashFrame: CGRect = .zero
+    
+    private let drawingColors: [(Color, UIColor)] = [
+        (.black, .black),
+        (.white, .white),
+        (.red, .systemRed),
+        (.blue, .systemBlue),
+        (.green, .systemGreen),
+        (.yellow, .systemYellow),
+        (.purple, .systemPurple),
+    ]
     
     private var currentItem: CollectedItem {
         gameState.collectedItems.first { $0.id == collectedItem.id } ?? collectedItem
+    }
+    
+    private var currentUIColor: UIColor {
+        drawingColors.first { $0.0 == selectedColor }?.1 ?? .black
     }
     
     var body: some View {
@@ -33,392 +42,454 @@ struct ObjectDetailView: View {
                 .resizable()
                 .ignoresSafeArea()
             
-            HStack(alignment: .center, spacing: 0) {
-                Image(collectedItem.object.imageName)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(maxWidth: .infinity)
-                    .clipped()
-                    .padding()
-                
-                VStack(alignment: .leading, spacing: 12) {
-                    HStack {
-                        VStack(alignment: .leading) {
-                            Text(collectedItem.object.name)
-                                .font(.custom("FredokaOne-Regular", size: 50))
-                                .foregroundStyle(Color("StatsText"))
-                                .lineLimit(1)
-                                .minimumScaleFactor(0.5)
-                            Text("Captured: \(collectedItem.timestamp.formatted(date: .abbreviated, time: .omitted))")
-                                .font(.custom("FredokaOne-Regular", size: 20))
-                                .foregroundStyle(Color("StatsText"))
-                                .lineLimit(1)
-                        }
-                        Spacer()
-                        HStack {
-                            Image("Star")
-                                .resizable()
-                                .scaledToFit()
-                                .frame(width: 50)
-                            
-                            Text("\(collectedItem.object.points)")
-                                .font(.custom("FredokaOne-Regular", size: 50))
-                                .foregroundStyle(.black)
-                                .lineLimit(1)
-                        }
+            HStack(spacing: 0) {
+                canvasArea
+                stickerSidebar
+            }
+            
+            VStack {
+                HStack {
+                    Button {
+                        dismiss()
+                    } label: {
+                        Image(systemName: "chevron.left")
+                            .font(.title2.weight(.bold))
+                            .foregroundStyle(.white)
+                            .frame(width: 44, height: 44)
+                            .background(.black.opacity(0.3))
+                            .clipShape(Circle())
                     }
-                    
-                    quizSection
-                    
                     Spacer()
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(50)
-            }
-            
-            if showConfetti {
-                ConfettiView()
-                    .ignoresSafeArea()
-                    .allowsHitTesting(false)
+                .padding(.leading, 16)
+                .padding(.top, 8)
+                Spacer()
             }
         }
-        .sensoryFeedback(.selection, trigger: showConfetti)
+        .onAppear {
+            loadState()
+            gameState.isFullScreenActive = true
+        }
+        .onDisappear {
+            gameState.isFullScreenActive = false
+        }
+        .toolbar(.hidden, for: .tabBar)
+        .toolbarVisibility(.hidden, for: .navigationBar)
     }
     
-    // MARK: - Quiz Section
+    // MARK: - Canvas Area (Left ~70%)
     
-    private var quizSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-//            HStack {
-//                Image(systemName: "brain.head.profile")
-//                    .font(.title2)
-//                    .foregroundStyle(.indigo)
-//                Text("Extra Points")
-//                    .font(.custom("FredokaOne-Regular", size: 24))
-//                    .foregroundStyle(Color("StatsText"))
-//                Spacer()
-//                if currentItem.quizBonusPoints != nil || completedQuizBonus != nil {
-//                    Image(systemName: "checkmark.circle.fill")
-//                        .foregroundStyle(.green)
-//                        .font(.title2)
-//                }
+    private var canvasArea: some View {
+        VStack(spacing: 12) {
+            headerBar
+            
+            GeometryReader { geo in
+                ZStack {
+                    photoLayer
+                        .frame(width: geo.size.width, height: geo.size.height)
+                        .clipped()
+                    
+                    DrawingCanvasView(
+                        drawing: $drawing,
+                        inkColor: currentUIColor,
+                        isErasing: isErasing,
+                        onDrawingChanged: { _ in debounceSaveDrawing() }
+                    )
+                    .allowsHitTesting(isDrawingActive)
+                    
+                    ForEach(placedStickers) { sticker in
+                        DraggableStickerView(
+                            sticker: sticker,
+                            onUpdate: { updated in
+                                if let i = placedStickers.firstIndex(where: { $0.id == updated.id }) {
+                                    placedStickers[i] = updated
+                                    debounceSaveStickers()
+                                }
+                            },
+                            onDelete: {
+                                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                    placedStickers.removeAll { $0.id == sticker.id }
+                                }
+                                debounceSaveStickers()
+                            },
+                            onDragChanged: { globalPos in
+                                isDraggingOverTrash = trashFrame.contains(globalPos)
+                            },
+                            onDragEnded: { globalPos in
+                                if trashFrame.contains(globalPos) {
+                                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                        placedStickers.removeAll { $0.id == sticker.id }
+                                    }
+                                    debounceSaveStickers()
+                                }
+                                isDraggingOverTrash = false
+                            }
+                        )
+                        .allowsHitTesting(!isDrawingActive)
+                    }
+                }
+                .clipShape(RoundedRectangle(cornerRadius: 16))
+                .onAppear { canvasSize = geo.size }
+                .onChange(of: geo.size) { _, newSize in canvasSize = newSize }
+            }
+            
+            ZStack {
+                drawingToolbar
+                
+                if !isDrawingActive {
+                    HStack {
+                        Spacer()
+                        trashZone
+                    }
+                }
+            }
+        }
+        .padding(.leading, 30)
+        .padding(.vertical, 16)
+        .padding(.trailing, 12)
+        .frame(maxWidth: .infinity)
+    }
+    
+    private var headerBar: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(collectedItem.object.name)
+                    .font(.custom("FredokaOne-Regular", size: 32))
+                    .foregroundStyle(Color("StatsText"))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.5)
+                Text("Captured: \(collectedItem.timestamp.formatted(date: .abbreviated, time: .omitted))")
+                    .font(.custom("FredokaOne-Regular", size: 14))
+                    .foregroundStyle(Color("StatsText").opacity(0.7))
+            }
+            Spacer()
+//            HStack(spacing: 4) {
+//                Image("Star")
+//                    .resizable()
+//                    .scaledToFit()
+//                    .frame(width: 34)
+//                Text("\(collectedItem.object.points)")
+//                    .font(.custom("FredokaOne-Regular", size: 34))
+//                    .foregroundStyle(.black)
 //            }
+        }
+    }
+    
+    @ViewBuilder
+    private var photoLayer: some View {
+        if let photo = collectedItem.image {
+            photo
+                .resizable()
+                .scaledToFill()
+        } else {
+            Image(collectedItem.object.imageName)
+                .resizable()
+                .scaledToFill()
+        }
+    }
+    
+    // MARK: - Drawing Toolbar
+    
+    private var drawingToolbar: some View {
+        HStack(spacing: 12) {
+            Button {
+                withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                    isDrawingActive.toggle()
+                }
+            } label: {
+                Image(systemName: isDrawingActive ? "pencil.tip" : "hand.point.up.fill")
+                    .font(.title2)
+                    .foregroundStyle(isDrawingActive ? .white : .orange)
+                    .frame(width: 50, height: 50)
+                    .background(isDrawingActive ? Color.indigo : Color.white)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .shadow(radius: 2)
+            }
             
-//            Text("Complete this quiz to earn extra points. This quiz is AI generated.")
-//                .font(.custom("FredokaOne-Regular", size: 14))
-//                .foregroundStyle(Color("StatsText").opacity(0.7))
-            
-            
-            HStack{
+            if isDrawingActive {
+                Divider()
+                    .frame(height: 36)
+                
+                ForEach(drawingColors, id: \.1) { color, _ in
+                    Circle()
+                        .fill(color)
+                        .frame(width: 44, height: 44)
+                        .overlay(
+                            Circle()
+                                .strokeBorder(.white, lineWidth: selectedColor == color && !isErasing ? 4 : 0)
+                        )
+                        .shadow(color: selectedColor == color && !isErasing ? color.opacity(0.5) : .clear, radius: 6)
+                        .onTapGesture {
+                            selectedColor = color
+                            isErasing = false
+                        }
+                }
+                
+                Divider()
+                    .frame(height: 36)
+                
+                Button {
+                    isErasing.toggle()
+                } label: {
+                    Image(systemName: "eraser.fill")
+                        .font(.title2)
+                        .foregroundStyle(isErasing ? .white : .black)
+                        .frame(width: 50, height: 50)
+                        .background(isErasing ? Color.pink : Color.white)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .shadow(radius: 2)
+                }
+                
+                Button {
+                    undoDrawing()
+                } label: {
+                    Image(systemName: "arrow.uturn.backward")
+                        .font(.title2)
+                        .foregroundStyle(.yellow)
+                        .frame(width: 50, height: 50)
+                        .background(.white)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .shadow(radius: 2)
+                }
+            }
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 10)
+        .background(.ultraThinMaterial)
+        .clipShape(Capsule())
+        .animation(.spring(response: 0.35, dampingFraction: 0.8), value: isDrawingActive)
+    }
+    
+    private var trashZone: some View {
+        GeometryReader { geo in
+            Color.clear
+                .onAppear { trashFrame = geo.frame(in: .global) }
+                .onChange(of: geo.frame(in: .global)) { _, newFrame in trashFrame = newFrame }
+        }
+        .frame(width: 70, height: 70)
+        .overlay(
+            ZStack {
+                Circle()
+                    .fill(isDraggingOverTrash ? Color.red : Color.white.opacity(0.9))
+                Image(systemName: "trash.fill")
+                    .font(.title)
+                    .foregroundStyle(isDraggingOverTrash ? .white : .red)
+            }
+            .frame(width: 60, height: 60)
+            .scaleEffect(isDraggingOverTrash ? 1.3 : 1.0)
+            .shadow(color: isDraggingOverTrash ? .red.opacity(0.5) : .black.opacity(0.15), radius: isDraggingOverTrash ? 10 : 4)
+            .animation(.spring(response: 0.3, dampingFraction: 0.6), value: isDraggingOverTrash)
+        )
+        .padding(.trailing, 10)
+    }
+    
+    // MARK: - Sticker Sidebar (Right ~30%)
+    
+    private var stickerSidebar: some View {
+        VStack(spacing: 0) {
+            HStack(spacing: 6) {
                 Image("Star")
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 130)
-                
-                Spacer()
-                
-                Text("Complete this quiz to earn extra points!")
-                    .font(.custom("FredokaOne-Regular", size: 30))
-                    .foregroundStyle(Color("StatsText"))
+                    .frame(width: 36)
+                Text("\(gameState.totalScore)")
+                    .font(.custom("FredokaOne-Regular", size: 36))
+                    .foregroundStyle(.black)
             }
+            .padding(.top, 16)
+            .padding(.bottom, 8)
             
-            if !isRetrying, let bonus = currentItem.quizBonusPoints ?? completedQuizBonus {
-                quizCompletedView(bonus: bonus)
-            } else if !AppleIntelligenceService.isAvailable {
-                unavailableView
-            } else if isGeneratingQuiz {
-                VStack(spacing: 16) {
-                    ProgressView()
-                        .scaleEffect(1.2)
-                    Text("Generating questions...")
-                        .font(.custom("FredokaOne-Regular", size: 16))
-                        .foregroundStyle(Color("StatsText").opacity(0.7))
-                }
-                .frame(maxWidth: .infinity)
-                .padding(30)
-            } else if let questions = quizQuestions, currentQuestionIndex < questions.count {
-                VStack(spacing: 12) {
-                    Text("Question \(currentQuestionIndex + 1) of 3")
-                        .font(.custom("FredokaOne-Regular", size: 14))
-                        .foregroundStyle(Color("StatsText").opacity(0.6))
-                    
-                    QuizCardView(
-                        question: questions[currentQuestionIndex],
-                        onSwiped: { userSaidTrue in
-                            let correct = questions[currentQuestionIndex].correctAnswer == userSaidTrue
-                            if correct { correctCount += 1 }
-                            withAnimation {
-                                currentQuestionIndex += 1
-                            }
-                            if currentQuestionIndex >= 3 {
-                                let bonus = correctCount * 5
-                                completedQuizBonus = bonus
-                                isRetrying = false
-                                gameState.addQuizBonusPoints(itemId: collectedItem.id, bonusPoints: bonus)
-                                withAnimation {
-                                    showConfetti = true
-                                }
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
-                                    withAnimation { showConfetti = false }
-                                }
-                            }
-                        }
-                    )
-                    .id(questions[currentQuestionIndex].id)
-                }
-            } else if quizQuestions != nil, currentQuestionIndex >= 3 {
-                quizJustCompletedView
-            } else {
-                Button {
-                    Task { await startQuiz() }
-                } label: {
-                    HStack {
-                        Image(systemName: "apple.intelligence")
-                        Text("Start Quiz")
-                            .font(.custom("FredokaOne-Regular", size: 18))
-                    }
-                    .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.large)
-                .tint(.indigo)
-                .disabled(isGeneratingQuiz)
-            }
-            
-            if let error = aiService.errorMessage {
-                Text(error)
-                    .font(.caption)
-                    .foregroundStyle(.red)
-            }
-        }
-        .padding()
-        .background(.white)
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-    }
-    
-    // MARK: - Quiz Completed View
-    
-    private func quizCompletedView(bonus: Int) -> some View {
-        VStack(spacing: 12) {
-            Image(systemName: "star.circle.fill")
-                .font(.system(size: 44))
-                .foregroundStyle(.yellow)
-            Text("Quiz Completed!")
-                .font(.custom("FredokaOne-Regular", size: 22))
-                .foregroundStyle(Color("StatsText"))
-            Text("You won \(bonus) extra points!")
-                .font(.custom("FredokaOne-Regular", size: 16))
-                .foregroundStyle(Color("StatsText").opacity(0.7))
-            
-            if bonus >= 15 {
-                Text("You crushed it! Keep up the good work!")
-                    .font(.custom("FredokaOne-Regular", size: 14))
-                    .foregroundStyle(Color("StatsText").opacity(0.6))
-            }
-            
-            Button {
-                Task { await restartQuiz() }
-            } label: {
-                HStack {
-                    Image(systemName: "arrow.counterclockwise")
-                    Text("Retry Quiz")
-                        .font(.custom("FredokaOne-Regular", size: 16))
-                }
-                .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.bordered)
-            .controlSize(.regular)
-            .tint(.indigo)
-            .padding(.top, 8)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(20)
-        .background(
-            RoundedRectangle(cornerRadius: 16)
-                .fill(.ultraThinMaterial)
-        )
-    }
-    
-    // MARK: - Quiz Just Completed View
-    
-    private var quizJustCompletedView: some View {
-        VStack(spacing: 16) {
-            Image(systemName: "party.popper.fill")
-                .font(.system(size: 44))
-                .foregroundStyle(.indigo)
-            Text("You got \(correctCount) out of 3!")
-                .font(.custom("FredokaOne-Regular", size: 22))
-                .foregroundStyle(Color("StatsText"))
-            Text("+\(completedQuizBonus ?? 0) bonus points")
+            Text("Stickers")
                 .font(.custom("FredokaOne-Regular", size: 20))
-                .foregroundStyle(.green)
+                .foregroundStyle(Color("StatsText"))
+                .padding(.bottom, 8)
             
-            Button {
-                Task { await restartQuiz() }
-            } label: {
-                HStack {
-                    Image(systemName: "arrow.counterclockwise")
-                    Text("Retry Quiz")
-                        .font(.custom("FredokaOne-Regular", size: 16))
+            ScrollView {
+                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
+                    ForEach(StickerCatalog.all) { sticker in
+                        stickerCell(sticker)
+                    }
                 }
-                .frame(maxWidth: .infinity)
+                .padding(.horizontal, 12)
+                .padding(.bottom, 20)
             }
-            .buttonStyle(.bordered)
-            .controlSize(.regular)
-            .tint(.indigo)
-            .padding(.top, 8)
         }
-        .frame(maxWidth: .infinity)
-        .padding(20)
-        .background(
-            RoundedRectangle(cornerRadius: 16)
-                .fill(.ultraThinMaterial)
-        )
+        .frame(width: 220)
+        .background(.ultraThinMaterial)
+        .clipShape(RoundedRectangle(cornerRadius: 20))
+        .padding(.trailing, 16)
+        .padding(.vertical, 16)
     }
     
-    // MARK: - Unavailable View
-    
-    private var unavailableView: some View {
-        VStack(spacing: 12) {
-            Image(systemName: "exclamationmark.triangle.fill")
-                .font(.largeTitle)
-                .foregroundStyle(.orange)
-            
-            Text("Apple Intelligence Unavailable")
-                .font(.custom("FredokaOne-Regular", size: 18))
-                .foregroundStyle(Color("StatsText"))
-            
-            Text("Requires iPhone 15 Pro or newer, or M-series iPad with iOS 26+")
-                .font(.custom("FredokaOne-Regular", size: 14))
-                .foregroundStyle(Color("StatsText").opacity(0.7))
-                .multilineTextAlignment(.center)
+    private func stickerCell(_ sticker: StickerDefinition) -> some View {
+        let owned = gameState.isStickerPurchased(sticker.id)
+        let canAfford = gameState.totalScore >= sticker.price
+        
+        return Button {
+            if owned {
+                placeSticker(sticker)
+            } else if canAfford {
+                let success = gameState.purchaseSticker(sticker)
+                if success {
+                    placeSticker(sticker)
+                }
+            }
+        } label: {
+            VStack(spacing: 4) {
+                Image(sticker.imageName)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 60, height: 60)
+                    .saturation(owned || canAfford ? 1 : 0.3)
+                    .opacity(owned || canAfford ? 1 : 0.5)
+                
+                if owned {
+                    Text("Owned")
+                        .font(.custom("FredokaOne-Regular", size: 10))
+                        .foregroundStyle(.green)
+                } else {
+                    HStack(spacing: 2) {
+                        Image("Star")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 12)
+                        Text("\(sticker.price)")
+                            .font(.custom("FredokaOne-Regular", size: 12))
+                            .foregroundStyle(canAfford ? .orange : .gray)
+                    }
+                }
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 8)
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(owned ? Color.green.opacity(0.1) : .white.opacity(0.5))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .strokeBorder(owned ? Color.green.opacity(0.3) : .clear, lineWidth: 2)
+            )
         }
-        .padding()
-        .frame(maxWidth: .infinity)
-        .background(Color.orange.opacity(0.15))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .buttonStyle(.plain)
+        .sensoryFeedback(.impact(weight: .medium), trigger: owned)
     }
     
     // MARK: - Actions
     
-    private func startQuiz() async {
-        isGeneratingQuiz = true
-        aiService.errorMessage = nil
-        
-        do {
-            let questions = try await aiService.generateQuizQuestions(for: collectedItem.object.name)
-            quizQuestions = questions
-            currentQuestionIndex = 0
-            correctCount = 0
-        } catch {
-            print("Failed to generate quiz: \(error)")
+    private func placeSticker(_ sticker: StickerDefinition) {
+        let center = CGPoint(
+            x: canvasSize.width / 2 + CGFloat.random(in: -40...40),
+            y: canvasSize.height / 2 + CGFloat.random(in: -40...40)
+        )
+        let placed = PlacedSticker(
+            stickerImageName: sticker.imageName,
+            position: center,
+            scale: 0.8
+        )
+        withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) {
+            placedStickers.append(placed)
         }
-        
-        isGeneratingQuiz = false
+        debounceSaveStickers()
     }
     
-    private func restartQuiz() async {
-        gameState.resetQuiz(itemId: collectedItem.id)
-        quizQuestions = nil
-        currentQuestionIndex = 0
-        correctCount = 0
-        completedQuizBonus = nil
-        showConfetti = false
-        isRetrying = true
-        await startQuiz()
+    private func loadState() {
+        placedStickers = currentItem.placedStickers
+        if let data = currentItem.drawingData,
+           let restored = try? PKDrawing(data: data) {
+            drawing = restored
+        }
+    }
+    
+    private func debounceSaveDrawing() {
+        saveWorkItem?.cancel()
+        let item = DispatchWorkItem { [drawing] in
+            gameState.saveDrawing(itemId: collectedItem.id, data: drawing.dataRepresentation())
+        }
+        saveWorkItem = item
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0, execute: item)
+    }
+    
+    private func debounceSaveStickers() {
+        gameState.savePlacedStickers(itemId: collectedItem.id, stickers: placedStickers)
+    }
+    
+    private func undoDrawing() {
+        guard !drawing.strokes.isEmpty else { return }
+        var updated = drawing
+        updated.strokes.removeLast()
+        drawing = updated
+        debounceSaveDrawing()
     }
 }
 
-// MARK: - Quiz Card View (swipe right = true, left = false)
+// MARK: - Draggable Sticker View
 
-@available(iOS 17.0, *)
-struct QuizCardView: View {
-    let question: QuizQuestion
-    let onSwiped: (Bool) -> Void
+struct DraggableStickerView: View {
+    let sticker: PlacedSticker
+    var onUpdate: (PlacedSticker) -> Void
+    var onDelete: () -> Void
+    var onDragChanged: ((CGPoint) -> Void)?
+    var onDragEnded: ((CGPoint) -> Void)?
     
-    @State private var dragOffset: CGFloat = 0
-    private let swipeThreshold: CGFloat = 100
+    @State private var dragOffset: CGSize = .zero
+    @State private var currentScale: CGFloat = 1.0
+    @State private var currentRotation: Angle = .zero
     
     var body: some View {
-        ZStack {
-            VStack(spacing: 20) {
-                Text(question.question)
-                    .font(.custom("FredokaOne-Regular", size: 30))
-                    .foregroundStyle(.black)
-                    .multilineTextAlignment(.center)
-                    .minimumScaleFactor(0.5)
-                    .padding(.horizontal, 24)
+        Image(sticker.stickerImageName)
+            .resizable()
+            .scaledToFit()
+            .frame(width: 80, height: 80)
+            .scaleEffect(sticker.scale * currentScale)
+            .rotationEffect(.degrees(sticker.rotationDegrees) + currentRotation)
+            .offset(x: dragOffset.width, y: dragOffset.height)
+            .position(sticker.position)
+            .gesture(dragGesture)
+            .gesture(scaleAndRotateGesture)
+    }
+    
+    private var dragGesture: some Gesture {
+        DragGesture(coordinateSpace: .global)
+            .onChanged { value in
+                dragOffset = CGSize(
+                    width: value.location.x - value.startLocation.x,
+                    height: value.location.y - value.startLocation.y
+                )
+                onDragChanged?(value.location)
+            }
+            .onEnded { value in
+                let globalPos = value.location
+                onDragEnded?(globalPos)
                 
-                HStack {
-                    Label("False", systemImage: "xmark.circle.fill")
-                        .font(.custom("FredokaOne-Regular", size: 14))
-                        .foregroundStyle(.secondary)
-                    Spacer()
-                    Label("True", systemImage: "checkmark.circle.fill")
-                        .font(.custom("FredokaOne-Regular", size: 14))
-                        .foregroundStyle(.secondary)
-                }
-                .padding(.horizontal, 24)
+                var updated = sticker
+                updated.positionX += value.location.x - value.startLocation.x
+                updated.positionY += value.location.y - value.startLocation.y
+                dragOffset = .zero
+                onUpdate(updated)
             }
-            .frame(maxWidth: .infinity)
-            .frame(minHeight: 150)
-            .padding(.vertical, 24)
-            .clipShape(RoundedRectangle(cornerRadius: 20))
-            .overlay(
-                RoundedRectangle(cornerRadius: 20)
-                    .strokeBorder(Color.primary.opacity(0.1), lineWidth: 1)
-            )
-            .overlay {
-                if dragOffset > 0 {
-                    RoundedRectangle(cornerRadius: 20)
-                        .fill(Color.green.opacity(min(0.6, Double(dragOffset) / 150)))
-                        .overlay(
-                            Image(systemName: "checkmark.circle.fill")
-                                .font(.system(size: 60))
-                                .foregroundStyle(.white.opacity(min(1, Double(dragOffset) / 80)))
-                        )
-                        .allowsHitTesting(false)
-                }
-                if dragOffset < 0 {
-                    RoundedRectangle(cornerRadius: 20)
-                        .fill(Color.red.opacity(min(0.6, Double(-dragOffset) / 150)))
-                        .overlay(
-                            Image(systemName: "xmark.circle.fill")
-                                .font(.system(size: 60))
-                                .foregroundStyle(.white.opacity(min(1, Double(-dragOffset) / 80)))
-                        )
-                        .allowsHitTesting(false)
-                }
-            }
-        }
-        .offset(x: dragOffset)
-        .rotationEffect(.degrees(Double(dragOffset) / 20), anchor: .bottom)
-        .gesture(
-            DragGesture()
+    }
+    
+    private var scaleAndRotateGesture: some Gesture {
+        SimultaneousGesture(
+            MagnificationGesture()
                 .onChanged { value in
-                    dragOffset = value.translation.width
+                    currentScale = value
                 }
                 .onEnded { value in
-                    let width = value.translation.width
-                    if width > swipeThreshold {
-                        withAnimation(.easeOut(duration: 0.2)) {
-                            dragOffset = 500
-                        }
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
-                            onSwiped(true)
-                        }
-                    } else if width < -swipeThreshold {
-                        withAnimation(.easeOut(duration: 0.2)) {
-                            dragOffset = -500
-                        }
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
-                            onSwiped(false)
-                        }
-                    } else {
-                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                            dragOffset = 0
-                        }
-                    }
+                    var updated = sticker
+                    updated.scale = max(0.3, min(3.0, sticker.scale * value))
+                    currentScale = 1.0
+                    onUpdate(updated)
+                },
+            RotationGesture()
+                .onChanged { angle in
+                    currentRotation = angle
+                }
+                .onEnded { angle in
+                    var updated = sticker
+                    updated.rotationDegrees += angle.degrees
+                    currentRotation = .zero
+                    onUpdate(updated)
                 }
         )
     }
@@ -506,6 +577,7 @@ struct ConfettiView: View {
 #Preview {
     let state: GameState = {
         let s = GameState()
+        s.totalScore = 100
         s.collectedItems = [
             CollectedItem(
                 object: GameObject(name: "Traffic Cone", category: "Road", difficulty: .easy),
